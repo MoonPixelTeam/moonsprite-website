@@ -1,0 +1,78 @@
+name: Deploy website
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# 同一时间只跑一个部署；新推送取消排队中的旧部署，但不打断正在发布的那个。
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout website
+        uses: actions/checkout@v4
+
+      - name: Checkout editor (for the /try/ web trial)
+        uses: actions/checkout@v4
+        with:
+          repository: MoonPixelTeam/moonsprite
+          ref: main
+          path: editor
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install website dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install editor dependencies
+        working-directory: editor
+        run: pnpm install --frozen-lockfile
+
+      # 编辑器以 base=/try/ 构建，资源引用自带前缀，因此把产物整目录放进 dist/try 即可。
+      - name: Build editor web trial
+        working-directory: editor
+        run: pnpm build:web-trial
+
+      - name: Assemble site
+        run: |
+          set -euo pipefail
+          pnpm build
+          cp -r editor/out/web-trial dist/try
+          test -f dist/index.html
+          test -f dist/try/index.html
+
+      # 设置仓库变量 PAGES_CUSTOM_DOMAIN 后自动带出自定义域名；留空则用 *.github.io。
+      - name: Write CNAME for the custom domain
+        if: vars.PAGES_CUSTOM_DOMAIN != ''
+        run: echo "${{ vars.PAGES_CUSTOM_DOMAIN }}" > dist/CNAME
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

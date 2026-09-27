@@ -38,6 +38,31 @@ $env:VITE_TRIAL_URL = "http://127.0.0.1:5174/try/"; pnpm dev
 
 图标校验默认只做仓库内自查，需要同时比对桌面版真源时把 `MOONSPRITE_APP_ROOT` 指向应用仓库根目录（例如 `D:\Mine\Study\Work\学习工作\CodexWork\moonsprite`）：`src/assets/icons/` 中的多数像素 SVG 是应用仓库 `PixelUtilityIcon.tsx` / `PlaybackPixelIcon.tsx` 字形的提取副本，`scripts/check-icons.mjs` 会比对哈希与字形路径，防止两边跑偏。没有 `MOONSPRITE_APP_ROOT` 时这部分比对跳过，其余检查照常执行。
 
+## 部署
+
+站点是纯静态产物（`dist/`），用 hash 路由，不需要服务端或 SPA 回退。推送到 `main` 后由 `.github/workflows/deploy.yml` 自动发布到 GitHub Pages。
+
+工作流做四件事：构建官网、从 `MoonPixelTeam/moonsprite` 拉取源码并构建 web-trial、把产物放进 `dist/try`、上传发布。编辑器与官网因此始终同源，`/try/` 链接使用默认值即可。
+
+### 自定义域名
+
+1. 在仓库 **Settings → Pages → Custom domain** 填入域名。
+2. DNS 解析：
+
+   | 域名类型 | 记录 | 值 |
+   | --- | --- | --- |
+   | 子域名（如 `www.example.com`） | CNAME | `moonpixelteam.github.io` |
+   | 根域名（如 `example.com`） | A | `185.199.108.153`、`185.199.109.153`、`185.199.110.153`、`185.199.111.153` |
+   | 根域名（IPv6，可选） | AAAA | `2606:50c0:8000::153`、`2606:50c0:8001::153`、`2606:50c0:8002::153`、`2606:50c0:8003::153` |
+
+3. 解析生效后回到同一页面勾选 **Enforce HTTPS**。
+
+若希望域名由仓库配置驱动（而不是在网页上设置），在 **Settings → Secrets and variables → Actions → Variables** 新建 `PAGES_CUSTOM_DOMAIN`，值是裸域名（不要带 `https://` 或路径）。工作流会据此生成 `CNAME` 文件，与网页端设置等效。
+
+### 中国大陆访问
+
+GitHub Pages 在国内访问不稳定。如果主要面向国内用户，建议把 `dist/` 同步到国内可访问的托管（对象存储 + CDN，需备案）或 Cloudflare Pages；产物完全静态，换托管只需重新上传 `dist/`，不需要改代码。
+
 ## 产品配图
 
 `scripts/capture-product.mjs` 用 Playwright 连接应用进程的 WebView2 调试端口截图，写入 `public/assets/product/source/`。需要应用已构建出 `src-tauri/target/release/moonsprite.exe`：
