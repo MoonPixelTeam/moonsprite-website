@@ -1,6 +1,6 @@
 /* ---------- app chrome: titlebar + menubar ---------- */
 
-.app-chrome { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: var(--space-10); min-height: 76px; padding-inline: max(var(--space-12), calc((100% - var(--max)) / 2)); background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); backdrop-filter: blur(16px) saturate(125%); -webkit-backdrop-filter: blur(16px) saturate(125%); }
+.app-chrome { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: var(--space-10); min-height: 76px; padding-inline: max(var(--space-12), calc((100% - var(--max)) / 2)); background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); backdrop-filter: blur(16px) saturate(125%); }
 .titlebar { display: flex; flex-shrink: 0; align-items: center; }
 .titlebar-app { display: inline-flex; align-items: center; gap: var(--space-5); }
 .titlebar-app img { width: 28px; height: 28px; image-rendering: pixelated; }
