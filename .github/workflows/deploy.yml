@@ -59,6 +59,22 @@ jobs:
           test -f dist/index.html
           test -f dist/try/index.html
 
+      # 发布前自检：确认首页、体验版入口和静态资源齐全。
+      - name: Check assembled site
+        run: |
+          set -euo pipefail
+          for file in \
+            dist/index.html \
+            dist/try/index.html \
+            dist/assets/moonsprite-logo.svg \
+            dist/assets/product/workspace-v3-2560.webp \
+            dist/assets/fonts/silkscreen-400.woff2; do
+            test -s "$file" || { echo "missing or empty: $file"; exit 1; }
+          done
+          grep -q '/try/assets/' dist/try/index.html
+          grep -q '/assets/' dist/index.html
+          echo "site check passed"
+
       # 设置仓库变量 PAGES_CUSTOM_DOMAIN 后自动带出自定义域名；留空则用 *.github.io。
       - name: Write CNAME for the custom domain
         if: vars.PAGES_CUSTOM_DOMAIN != ''
