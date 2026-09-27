@@ -90,6 +90,8 @@ export interface MarketContent {
 export interface Copy {
   meta: { title: string; description: string }
   nav: { work: string; features: string; market: string; docs: string; faq: string; blog: string; community: string; menu: string; close: string }
+  /** 未上线入口的“开发中”提示，与 SiteFeature 一一对应。 */
+  unavailable: { label: string; message: string; dismiss: string; features: { account: string; cart: string; market: string; competitions: string } }
   common: { dev: string; steam: string; steamSoon: string; github: string; themeToLight: string; themeToDark: string }
   chrome: { docLabel: string }
   hero: { title: string; subtitle: string; description: string; platform: string; license: string; windowTitle: string; imageAlt: string; prevSlide: string; nextSlide: string }
@@ -565,6 +567,12 @@ export const copy: Record<Language, Copy> = {
       description: 'MoonSprite 是面向 Windows 的原创源码可见像素画工作台。绘制、制作动画并管理完整创作流程。',
     },
     nav: { work: '作品', features: '特色功能', market: '市场', docs: '文档', faq: 'FAQ', blog: '博客', community: '社区', menu: '打开导航', close: '关闭导航' },
+    unavailable: {
+      label: '开发中',
+      message: '功能开发中，敬请期待。',
+      dismiss: '关闭提示',
+      features: { account: '账户', cart: '购物车', market: '市场', competitions: '比赛' },
+    },
     common: { dev: 'Beta 开发中', steam: '在 Steam 加入愿望单', steamSoon: '即将登陆 Steam', github: '查看 GitHub', themeToLight: '切换到白天模式', themeToDark: '切换到黑夜模式' },
     chrome: { docLabel: '未命名工程' },
     hero: {
@@ -902,6 +910,12 @@ export const copy: Record<Language, Copy> = {
   en: {
     meta: { title: 'MoonSprite - Pixel Art Workstation for Windows', description: 'MoonSprite is an original source-available pixel art workstation for Windows, built for drawing, animation, and a complete creative workflow.' },
     nav: { work: 'Artwork', features: 'Features', market: 'Market', docs: 'Docs', faq: 'FAQ', blog: 'Blog', community: 'Community', menu: 'Open navigation', close: 'Close navigation' },
+    unavailable: {
+      label: 'IN DEVELOPMENT',
+      message: 'This feature is still in development. Stay tuned.',
+      dismiss: 'Dismiss notice',
+      features: { account: 'Account', cart: 'Cart', market: 'Market', competitions: 'Competitions' },
+    },
     common: { dev: 'Beta in development', steam: 'Wishlist on Steam', steamSoon: 'Coming soon to Steam', github: 'View on GitHub', themeToLight: 'Switch to light mode', themeToDark: 'Switch to dark mode' },
     chrome: { docLabel: 'Untitled project' },
     hero: {

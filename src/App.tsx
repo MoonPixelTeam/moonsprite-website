@@ -7,6 +7,7 @@ import { DocumentMeta } from './app/DocumentMeta'
 import { useSitePreferences } from './app/useSitePreferences'
 import { SiteNavigation } from './app/SiteNavigation'
 import { SiteFooter } from './app/SiteFooter'
+import { FeatureNoticeHost } from './app/FeatureNoticeHost'
 
 export function App() {
   const preferences = useSitePreferences()
@@ -28,6 +29,7 @@ export function App() {
     <SiteNavigation preferences={preferences} route={route} t={t} />
     <RouteOutlet route={route} t={t} language={language} />
     <SiteFooter t={t} />
+    <FeatureNoticeHost t={t} />
     <BackToTop routeKey={`${route.page}/${route.subId ?? ''}`} label={language === 'zh' ? '回到顶部' : 'Back to top'} supportLabel={language === 'zh' ? '客服' : 'Help'} topLabel={language === 'zh' ? '顶部' : 'Top'} />
   </div>
 }

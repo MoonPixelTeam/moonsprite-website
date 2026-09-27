@@ -38,6 +38,21 @@ $env:VITE_TRIAL_URL = "http://127.0.0.1:5174/try/"; pnpm dev
 
 图标校验默认只做仓库内自查，需要同时比对桌面版真源时把 `MOONSPRITE_APP_ROOT` 指向应用仓库根目录（例如 `D:\Mine\Study\Work\学习工作\CodexWork\moonsprite`）：`src/assets/icons/` 中的多数像素 SVG 是应用仓库 `PixelUtilityIcon.tsx` / `PlaybackPixelIcon.tsx` 字形的提取副本，`scripts/check-icons.mjs` 会比对哈希与字形路径，防止两边跑偏。没有 `MOONSPRITE_APP_ROOT` 时这部分比对跳过，其余检查照常执行。
 
+## 内部开关：开发中入口
+
+商店、购物车、比赛和账户仍是本地原型，正式站上这四个入口只回答一句「功能开发中，敬请期待」，不会打开对应界面。开关状态按下面的顺序解析，先命中者生效：
+
+| 方式 | 作用范围 | 说明 |
+| --- | --- | --- |
+| `pnpm dev` | 本地开发服务器 | 默认**放行**，四个入口照常可用，不需要任何设置 |
+| `VITE_FEATURES=open pnpm build` | 单次构建产物 | 构建一个不锁的版本 |
+| 访问 `?features=open` | 当前浏览器 | 打开一次即记住（写入 localStorage），之后正常访问也保持放行 |
+| 浏览器控制台 `localStorage.setItem('moonsprite.features','open')` | 当前浏览器 | 等价于上一条，线上站点同样可用 |
+
+反向开关是 `?features=locked`（或把 localStorage 的值设成 `locked`），用于在开发站上预览上线后的样子。存储键名是 `moonsprite.features`，只影响写入它的那个浏览器，访客看到的仍是开发中提示。
+
+上线前请确认 `pnpm build` 产物是锁定态：打开 preview 后市场入口应弹出提示而不是跳转。
+
 ## 部署
 
 站点是纯静态产物（`dist/`），用 hash 路由，不需要服务端或 SPA 回退。推送到 `main` 后由 `.github/workflows/deploy.yml` 自动发布到 GitHub Pages。

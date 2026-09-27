@@ -1,0 +1,111 @@
+/*
+ * The notice that answers header entries for areas still in development. Semantic tokens
+ * only, square corners, one 1px border, one lift off the page.
+ */
+.feature-notice-layer {
+  position: fixed;
+  right: max(var(--page-gutter), env(safe-area-inset-right));
+  bottom: max(var(--page-gutter), env(safe-area-inset-bottom));
+  z-index: 90;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.feature-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-5);
+  width: min(320px, calc(100vw - var(--page-gutter) * 2));
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-7);
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 12px 28px var(--shadow);
+  pointer-events: auto;
+  animation: feature-notice-in 140ms steps(3, end);
+}
+
+@keyframes feature-notice-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.feature-notice-mark {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  background: var(--accent);
+}
+
+.feature-notice-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.feature-notice-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--text);
+  font-size: var(--font-small);
+  line-height: 1.6;
+}
+
+.feature-notice-label {
+  padding: 1px 6px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-family: var(--font-pixel);
+  font-size: var(--font-pixel-tag);
+  letter-spacing: 0.04em;
+}
+
+.feature-notice-message {
+  margin: var(--space-3) 0 0;
+  color: var(--text-3);
+  font-size: var(--font-small);
+  line-height: 1.6;
+}
+
+.feature-notice-dismiss {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: var(--text-4);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.feature-notice-dismiss svg {
+  width: 11px;
+  height: 11px;
+  fill: currentColor;
+}
+
+.feature-notice-dismiss:hover {
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.feature-notice-dismiss:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-notice { animation: none; }
+}
+
+/* Header entries whose screen is still in development. They stay clickable and keep
+   their normal cursor; the muted colour is the only hint, so nothing looks broken. */
+.menubar-tabs a[data-gated] {
+  color: var(--text-3);
+}
