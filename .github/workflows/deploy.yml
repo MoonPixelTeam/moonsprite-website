@@ -7,7 +7,8 @@ on:
 
 permissions:
   contents: read
-  # deploy-pages 通过 OIDC 发布，需要 id-token: write。
+  # 发布到 Pages 需要 pages: write（创建部署记录）；deploy-pages 走 OIDC，需要 id-token: write。
+  pages: write
   id-token: write
 
 # 同一时间只跑一个部署；新推送取消排队中的旧部署，但不打断正在发布的那个。
