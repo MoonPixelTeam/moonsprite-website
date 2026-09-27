@@ -1,5 +1,5 @@
 {
-  "name": "@moonsprite/website",
+  "name": "moonsprite-website",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,8 +8,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check:classes": "node scripts/check-classes.mjs",
+    "check:icons": "node scripts/check-icons.mjs",
     "check": "tsc --noEmit && node scripts/check-classes.mjs && node scripts/check-icons.mjs",
-    "check:icons": "node scripts/check-icons.mjs"
+    "test": "node --test scripts/*.test.mjs",
+    "capture:product": "node scripts/capture-product.mjs"
   },
   "dependencies": {
     "react": "19.2.8",
@@ -19,6 +21,8 @@
     "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "6.0.4",
+    "jsdom": "29.1.1",
+    "playwright": "1.62.0",
     "typescript": "7.0.2",
     "vite": "8.1.5"
   }

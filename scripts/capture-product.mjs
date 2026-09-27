@@ -1,19 +1,43 @@
+/*
+ * 从桌面版截图，产出官网的产品配图。官网仓库不再假设自己位于应用仓库里，
+ * 所以应用根目录必须显式给出：
+ *
+ *   pnpm capture:product -- "D:\path\to\moonsprite"
+ *   $env:MOONSPRITE_APP_ROOT = "D:\path\to\moonsprite"; pnpm capture:product
+ *
+ * 需要应用已构建出 src-tauri/target/release/moonsprite.exe。
+ */
 import { spawn } from 'node:child_process'
 import { access, mkdir, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 
-const root = process.cwd()
-const executable = join(root, 'src-tauri', 'target', 'release', 'moonsprite.exe')
-const startupProject = join(root, 'src-tauri', 'resources', '示例.moonsprite')
-const outputDirectory = join(root, 'website', 'public', 'assets', 'product', 'source')
+const websiteRoot = dirname(dirname(fileURLToPath(import.meta.url)))
+const appRoot = resolve(process.argv[2] ?? process.env.MOONSPRITE_APP_ROOT ?? '')
+if (!process.argv[2] && !process.env.MOONSPRITE_APP_ROOT) {
+  console.error('[MoonSprite] 请指定应用仓库根目录：pnpm capture:product -- "<moonsprite 路径>"')
+  console.error('[MoonSprite] 或设置环境变量 MOONSPRITE_APP_ROOT。')
+  process.exit(1)
+}
+
+const executable = join(appRoot, 'src-tauri', 'target', 'release', 'moonsprite.exe')
+const startupProject = join(appRoot, 'src-tauri', 'resources', '示例.moonsprite')
+const outputDirectory = join(websiteRoot, 'public', 'assets', 'product', 'source')
 const debugPort = '9231'
 const sessionDirectory = await mkdtemp(join(tmpdir(), 'moonsprite-website-capture-'))
 const appDataDirectory = join(sessionDirectory, 'app-data')
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds))
 
-await Promise.all([access(executable), access(startupProject), mkdir(outputDirectory, { recursive: true })])
+try {
+  await Promise.all([access(executable), access(startupProject)])
+} catch {
+  console.error(`[MoonSprite] 找不到应用构建产物：${executable}`)
+  console.error('[MoonSprite] 请先在应用仓库执行桌面版发布构建（pnpm build）。')
+  process.exit(1)
+}
+await mkdir(outputDirectory, { recursive: true })
 
 const child = spawn(executable, [startupProject], {
   detached: false,
@@ -39,14 +63,14 @@ try {
       await delay(250)
     }
   }
-  if (!browser) throw new Error('MoonSprite did not expose a WebView2 debugging endpoint.')
+  if (!browser) throw new Error('MoonSprite 没有开放 WebView2 调试端口。')
 
   for (let attempt = 0; attempt < 240; attempt += 1) {
     page = browser.contexts().flatMap((context) => context.pages()).find((candidate) => candidate.url().includes('tauri.localhost'))
     if (page && await page.locator('.document-tab.active').count()) break
     await delay(250)
   }
-  if (!page) throw new Error('MoonSprite renderer page was not found.')
+  if (!page) throw new Error('没有找到 MoonSprite 渲染页。')
 
   await page.bringToFront()
   await page.setViewportSize({ width: 1920, height: 1080 })

@@ -22,6 +22,7 @@ test('workspace deep links preserve page ownership, access gates and admin navig
     const { StudioProvider, useStudio } = await server.ssrLoadModule('/src/studio/store.tsx')
     const { DataProvider } = await server.ssrLoadModule('/src/data/store.tsx')
     const { CatalogueProvider } = await server.ssrLoadModule('/src/market/catalogue.ts')
+    const { CartProvider } = await server.ssrLoadModule('/src/market/cart.tsx')
     const { localAdapter, writeStudioUnlocked } = await server.ssrLoadModule('/src/api/local.ts')
     const { unlockLocalAdmin } = await server.ssrLoadModule('/src/api/permissions.ts')
     let unlockStudio
@@ -39,7 +40,7 @@ test('workspace deep links preserve page ownership, access gates and admin navig
     const render = async (hash, language = 'zh') => {
       await act(async () => {
         window.location.hash = hash
-        root.render(h(AccountProvider, null, h(StudioProvider, null, h(DataProvider, null, h(CatalogueProvider, null, h(Routed, { language }))))))
+        root.render(h(AccountProvider, null, h(StudioProvider, null, h(DataProvider, null, h(CatalogueProvider, null, h(CartProvider, { products: [] }, h(Routed, { language })))))))
       })
       await flush()
       await flush()
