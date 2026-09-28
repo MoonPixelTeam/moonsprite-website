@@ -6,7 +6,7 @@
 /* 页头品牌只剩这张字标：224x34 原生像素素材，矢量化为 crispEdges，因此按原生比例缩放即可，
    不用字体排，任何 DPR 下都锐利。 */
 /* 同名的 img.footer-wordmark 在 responsive.css 里负责页脚尺寸。 */
-img.titlebar-wordmark { width: 172px; height: 26px; image-rendering: pixelated; }
+img.titlebar-wordmark { width: auto; height: 26px; aspect-ratio: 224 / 34; image-rendering: pixelated; }
 .titlebar-app small { overflow: hidden; color: var(--text-4); font-size: var(--font-small); text-overflow: ellipsis; white-space: nowrap; }
 .titlebar-controls { display: flex; }
 .titlebar-controls i { display: grid; place-items: center; width: 36px; height: 32px; color: var(--text-3); font-family: var(--font-pixel); font-size: var(--font-pixel-tag); font-style: normal; line-height: 1; }
