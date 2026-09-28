@@ -18,7 +18,7 @@ img.titlebar-wordmark { width: 173.9px; height: 26px; }
 .menubar-tabs > a { padding: var(--space-5) var(--space-4); color: var(--text-3); font-family: "Fusion Pixel", var(--font-pixel); font-size: var(--font-body); font-weight: 400; white-space: nowrap; }
 .menubar-tabs > a:hover { color: var(--text); }
 .menubar-tabs > a[aria-current="page"] { color: var(--accent); box-shadow: inset 0 -2px 0 var(--accent); }
-.menubar-utils { display: flex; align-items: center; gap: var(--space-4); flex: 0 0 auto; }
+.menubar-utils { display: flex; align-items: center; gap: var(--space-4); flex: 0 0 auto; margin-left: auto; }
 .icon-button { display: inline-flex; flex: 0 0 var(--control-height-compact); align-items: center; justify-content: center; width: var(--control-height-compact); height: var(--control-height-compact); aspect-ratio: 1 / 1; padding: 0; color: var(--text-3); background: transparent; border: 1px solid transparent; cursor: pointer; }
 .icon-button svg { width: 16px; height: 16px; }
 .icon-button:hover { color: var(--text); }
