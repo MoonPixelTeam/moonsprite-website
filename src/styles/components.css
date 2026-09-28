@@ -4,7 +4,7 @@
 .titlebar { display: flex; flex-shrink: 0; align-items: center; }
 .titlebar-app { display: inline-flex; align-items: center; gap: var(--space-5); }
 .titlebar-app img { width: 28px; height: 28px; image-rendering: pixelated; }
-.titlebar-app-title { color: var(--text); font-family: var(--font-pixel); font-size: var(--font-body); font-weight: 700; line-height: 1; white-space: nowrap; }
+.titlebar-app-title { color: var(--text); font-family: var(--font-pixel); font-size: var(--font-lead); font-weight: 700; line-height: 1; white-space: nowrap; }
 .titlebar-app small { overflow: hidden; color: var(--text-4); font-size: var(--font-small); text-overflow: ellipsis; white-space: nowrap; }
 .titlebar-controls { display: flex; }
 .titlebar-controls i { display: grid; place-items: center; width: 36px; height: 32px; color: var(--text-3); font-family: var(--font-pixel); font-size: var(--font-pixel-tag); font-style: normal; line-height: 1; }
