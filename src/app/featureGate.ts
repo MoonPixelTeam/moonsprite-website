@@ -18,6 +18,7 @@
  * `?features=locked` turns them back off on a development build.
  */
 import { useEffect, useState } from 'react'
+import type { Route } from '../router'
 
 export type SiteFeature = 'account' | 'cart' | 'market' | 'competitions'
 
@@ -91,6 +92,54 @@ export function useUnavailableNotice(feature: SiteFeature): (() => void) | null 
   }, [])
   if (!locked) return null
   return () => notifyUnavailable(feature)
+}
+
+/*
+ * Which page surfaces belong to each prototype area. Anything listed here is refused at
+ * the route level, so a shared link, a footer link or a hand-typed hash behaves the same
+ * as the header button: the development page, not the screen.
+ */
+const ROUTE_FEATURES: Partial<Record<Route['page'], SiteFeature>> = {
+  market: 'market',
+  competitions: 'competitions',
+  /* Signing in only exists to reach the account area and the store. */
+  login: 'account',
+  register: 'account',
+  account: 'account',
+  purchases: 'account',
+  studio: 'account',
+  'studio-publish': 'account',
+  'studio-sales-order': 'account',
+  receipt: 'account',
+  orders: 'account',
+  settings: 'account',
+  support: 'account',
+  settlement: 'account',
+  admin: 'account',
+}
+
+/** The feature a route belongs to, or null when the route is public. */
+export function lockedRouteFeature(route: Route): SiteFeature | null {
+  return ROUTE_FEATURES[route.page] ?? null
+}
+
+/**
+ * The feature to refuse for this route, or null when it should render. Returns null as
+ * soon as the features are unlocked, so the developer switch lifts the route gate too.
+ */
+export function useLockedRoute(route: Route): SiteFeature | null {
+  const [locked, setLocked] = useState(() => siteFeaturesLocked())
+  useEffect(() => {
+    const sync = () => setLocked(siteFeaturesLocked())
+    window.addEventListener(CHANGE_EVENT, sync)
+    window.addEventListener('storage', sync)
+    return () => {
+      window.removeEventListener(CHANGE_EVENT, sync)
+      window.removeEventListener('storage', sync)
+    }
+  }, [])
+  if (!locked) return null
+  return lockedRouteFeature(route)
 }
 
 export type UnavailableNotice = { key: number; feature: SiteFeature }

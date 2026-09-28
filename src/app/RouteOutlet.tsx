@@ -10,12 +10,22 @@ import { MarketPage, PackDetailPage } from '../pages/Market'
 import { UiPage } from '../pages/Ui'
 import { LicensePage } from '../pages/License'
 import { PrivacyPage } from '../pages/Privacy'
+import { UnavailablePage } from '../pages/Unavailable'
+import { useLockedRoute } from './featureGate'
 
 const DocsPage = lazy(() => import('../pages/Docs').then((module) => ({ default: module.DocsPage })))
 const FaqPage = lazy(() => import('../pages/Faq').then((module) => ({ default: module.FaqPage })))
 const BlogPage = lazy(() => import('../pages/Blog').then((module) => ({ default: module.BlogPage })))
 
 export function RouteOutlet({ route, t, language }: { route: Route; t: Copy; language: Language }) {
+  /*
+   * The prototype areas are refused here rather than at each link, so every way of
+   * arriving — header button, footer link, market card, shared hash — ends at the same
+   * development page. Unlocking the features lifts this gate as well.
+   */
+  const locked = useLockedRoute(route)
+  if (locked) return <UnavailablePage feature={locked} t={t} language={language} />
+
   return <>
     {(route.page === 'login' || route.page === 'register') && <AuthPage key={route.page} mode={route.page} returnTo={route.returnTo} t={t} language={language} />}
     <WorkspaceRoutes route={route} t={t} language={language} />

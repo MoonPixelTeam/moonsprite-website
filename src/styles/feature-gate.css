@@ -100,6 +100,52 @@
   outline-offset: 1px;
 }
 
+/* Stand-in page for a route whose screen is still in development. */
+.unavailable-page { padding: var(--page-padding) 0 var(--page-bottom); }
+
+.unavailable-card {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: var(--space-14) var(--space-12);
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.unavailable-eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-family: var(--font-pixel);
+  font-size: var(--font-pixel-tag);
+  letter-spacing: 0.08em;
+}
+
+.unavailable-card h1 {
+  margin: var(--space-6) 0 0;
+  color: var(--text);
+  font-size: var(--font-h3);
+}
+
+.unavailable-message {
+  margin: var(--space-6) 0 0;
+  color: var(--text-2);
+  font-size: var(--font-body);
+  line-height: 1.7;
+}
+
+.unavailable-hint {
+  margin: var(--space-5) 0 0;
+  color: var(--text-3);
+  font-size: var(--font-small);
+  line-height: 1.7;
+}
+
+.unavailable-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-11);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .feature-notice { animation: none; }
 }

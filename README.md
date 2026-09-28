@@ -51,7 +51,20 @@ $env:VITE_TRIAL_URL = "http://127.0.0.1:5174/try/"; pnpm dev
 
 反向开关是 `?features=locked`（或把 localStorage 的值设成 `locked`），用于在开发站上预览上线后的样子。存储键名是 `moonsprite.features`，只影响写入它的那个浏览器，访客看到的仍是开发中提示。
 
-上线前请确认 `pnpm build` 产物是锁定态：打开 preview 后市场入口应弹出提示而不是跳转。
+锁定态下不只导航按钮被拦：这些页面在**路由层**同样被拒，因此深链、页脚链接、市场卡片、手输地址得到的都是同一个「开发中」页面，地址保持不变，页面里有返回首页的按钮。
+
+| 被拦的页面 | 归属功能 |
+| --- | --- |
+| `#/market`、`#/market/<包 id>` | 市场 |
+| `#/competitions` | 比赛 |
+| `#/login`、`#/register` | 账户（登录只为进入账户与商店） |
+| `#/account`、`#/purchases`、`#/studio`、`#/studio/publish`、`#/studio/sales/<id>`、`#/studio/settlement`、`#/orders/<id>`、`#/receipt`、`#/settings`、`#/support`、`#/admin` | 账户 |
+
+`#/docs`、`#/faq`、`#/blog`、`#/ui`、`#/privacy`、`#/license` 与首页不受影响；隐私政策与许可协议提到账户与交易，但作为法律文本面向所有人公开，保持可访问。
+
+路由闸门与上面的开关共用同一份状态，所以 `pnpm dev`、`?features=open` 和 `VITE_FEATURES=open` 一样会同时放开路由层。
+
+上线前请确认 `pnpm build` 产物是锁定态：打开 preview 后市场入口应弹出提示而不是跳转，直接访问 `#/account` 应看到开发中页面而不是登录表单。
 
 ## 部署
 
