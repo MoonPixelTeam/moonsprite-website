@@ -172,8 +172,8 @@ img.footer-wordmark { width: auto; height: 32px; aspect-ratio: 107 / 16; }
 @media (max-width: 560px) {
   .titlebar-app { gap: var(--space-4); }
   .menubar-utils { gap: 0; }
-  .language-button { font-size: var(--font-pixel-tag); padding-inline: var(--space-2); }
-  .language-button svg { display: none; }
+  /* 窄屏同样保留语言图标：此前这里 display: none 想换成文字，但按钮里并没有文字，
+     结果是 560px 以下这个键完全空白。图标与同排其它键一致，各档宽度均已实测放得下。 */
 
 
 
