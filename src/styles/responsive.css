@@ -11,13 +11,8 @@
 .footer-bottom { display: grid; place-items: center; gap: var(--space-7); padding: var(--space-20) 0 var(--space-22); border-top: 1px solid var(--divider); }
 .footer-logo { display: flex; align-items: center; }
 .footer-logo img { image-rendering: pixelated; }
-/* 与页头同一张素材，同样固定 100%，并按主题取纯白或纯黑。 */
-img.footer-wordmark {
-    width: 218px;
-    height: 21px;
-    /* 与页头同一张素材，内部为纯白填充。 */
-  }
-  :root[data-theme='light'] img.footer-wordmark { filter: invert(1); }
+/* 与页头同一张素材，同样固定 100%（62x34）。 */
+img.footer-wordmark { width: 62px; height: 34px; }
 .footer-bottom p { color: var(--text-4); font-size: var(--font-small); }
 
 /* ---------- code blocks ---------- */

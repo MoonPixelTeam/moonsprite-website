@@ -3,17 +3,14 @@
 .app-chrome { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: var(--space-10); min-height: 76px; padding-inline: max(var(--space-12), calc((100% - var(--max)) / 2)); background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); backdrop-filter: blur(16px) saturate(125%); }
 .titlebar { display: flex; flex-shrink: 0; align-items: center; }
 .titlebar-app { display: inline-flex; align-items: center; }
-/* 页头品牌只剩这张字标：原生 218x21 的单色剪影，矢量化为 crispEdges。
-   横向列块含 1px 与 8px 的奇数块，只有整数倍缩放才不破坏像素单位，因此固定 100%（1:1）。
-   素材内部为纯白填充，浅色主题由 CSS 反相为纯黑。
+/* 页头品牌只剩这张字标：原生 62x34 的双行像素素材（上 MOON、下 SPRITE），矢量化为 crispEdges。
+   横向列块含 1px 的奇数块，只有整数倍缩放才不破坏像素单位，因此固定 100%（1:1，一个原生像素
+   对应一个 CSS 像素）。素材自带配色，浅色主题靠浏览器同一套像素值显示。
    同名的 img.footer-wordmark 在 responsive.css 里负责页脚尺寸。 */
 img.titlebar-wordmark {
-    width: 218px;
-    height: 21px;
-    /* SVG 内部是纯白填充（见 public/assets/moonsprite-wordmark.svg）。 */
+    width: 62px;
+    height: 34px;
   }
-  /* 浅色主题反相为纯黑：对纯白/透明做 invert 是精确反相。 */
-  :root[data-theme='light'] img.titlebar-wordmark { filter: invert(1); }
 .titlebar-app small { overflow: hidden; color: var(--text-4); font-size: var(--font-small); text-overflow: ellipsis; white-space: nowrap; }
 .titlebar-controls { display: flex; }
 .titlebar-controls i { display: grid; place-items: center; width: 36px; height: 32px; color: var(--text-3); font-family: var(--font-pixel); font-size: var(--font-pixel-tag); font-style: normal; line-height: 1; }
