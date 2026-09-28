@@ -12,7 +12,7 @@
 .footer-logo { display: flex; align-items: center; }
 .footer-logo img { image-rendering: pixelated; }
 /* 与页头同一张素材，同样固定 100%（62x34）。 */
-img.footer-wordmark { width: 62px; height: 34px; }
+img.footer-wordmark { width: 118px; height: 18px; }
 .footer-bottom p { color: var(--text-4); font-size: var(--font-small); }
 
 /* ---------- code blocks ---------- */
