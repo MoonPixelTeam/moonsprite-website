@@ -2,10 +2,10 @@
 
 .app-chrome { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: var(--space-10); min-height: 76px; padding-inline: max(var(--space-12), calc((100% - var(--max)) / 2)); background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); backdrop-filter: blur(16px) saturate(125%); }
 .titlebar { display: flex; flex-shrink: 0; align-items: center; }
-.titlebar-app { display: inline-flex; align-items: center; gap: var(--space-5); }
-.titlebar-app img { width: 28px; height: 28px; image-rendering: pixelated; }
-/* 字标是与标识同源的像素素材（224x34 原生，矢量化为 crispEdges），因此按原生比例缩放，
-   不用字体排。172x26 下约为标识 28px 的 0.93，两者视觉等高。 */
+.titlebar-app { display: inline-flex; align-items: center; }
+/* 页头品牌只剩这张字标：224x34 原生像素素材，矢量化为 crispEdges，因此按原生比例缩放即可，
+   不用字体排，任何 DPR 下都锐利。 */
+/* 同名的 img.footer-wordmark 在 responsive.css 里负责页脚尺寸。 */
 img.titlebar-wordmark { width: 172px; height: 26px; image-rendering: pixelated; }
 .titlebar-app small { overflow: hidden; color: var(--text-4); font-size: var(--font-small); text-overflow: ellipsis; white-space: nowrap; }
 .titlebar-controls { display: flex; }

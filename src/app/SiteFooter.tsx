@@ -23,7 +23,7 @@ export function SiteFooter({ t }: { t: Copy }) {
         <nav className="footer-col" aria-label={columns.more.title}><h3>{columns.more.title}</h3><ul>{columns.more.items.map((item) => <FooterLink key={item.key} linkKey={item.key} label={item.label} />)}</ul></nav>
       </div>
       <div className="content-wrap footer-bottom">
-        <div className="footer-logo"><img src="/assets/moonsprite-logo.svg" width="40" height="40" alt="" /><strong>MoonSprite</strong></div>
+        <div className="footer-logo"><img className="footer-wordmark" src="/assets/moonsprite-wordmark.svg" alt="MoonSprite" width="190" height="29" /></div>
         <p>{t.footer.copyright}</p>
       </div>
     </footer>

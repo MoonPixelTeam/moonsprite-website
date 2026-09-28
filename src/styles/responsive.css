@@ -9,9 +9,9 @@
 .footer-col a svg { width: 11px; height: 11px; color: var(--text-4); }
 .footer-col .pending { color: var(--text-4); }
 .footer-bottom { display: grid; place-items: center; gap: var(--space-7); padding: var(--space-20) 0 var(--space-22); border-top: 1px solid var(--divider); }
-.footer-logo { display: flex; align-items: center; gap: var(--space-6); }
+.footer-logo { display: flex; align-items: center; }
 .footer-logo img { image-rendering: pixelated; }
-.footer-logo strong { color: var(--text); font-family: var(--font-pixel); font-size: var(--font-lead); font-weight: 700; }
+img.footer-wordmark { width: 190px; height: 29px; }
 .footer-bottom p { color: var(--text-4); font-size: var(--font-small); }
 
 /* ---------- code blocks ---------- */
@@ -150,7 +150,6 @@
 }
 @media (max-width: 560px) {
   img.titlebar-wordmark { width: 159px; height: 24px; }
-  .titlebar-app img { width: 24px; height: 24px; }
   .titlebar-app { gap: var(--space-4); }
   .menubar-utils { gap: 0; }
   .language-button { font-size: var(--font-pixel-tag); padding-inline: var(--space-2); }
