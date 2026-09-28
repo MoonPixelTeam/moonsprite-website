@@ -8,7 +8,7 @@
 .hero-github svg { width: 14px; height: 14px; }
 /* 菜单按钮的显隐。导航面板的样式统一在 responsive.css，避免两处定义互相覆盖。 */
 @media (max-width: 1100px) { .menu-button { display: inline-flex; } }
-@media (max-width: 560px) { .app-chrome { flex-wrap: wrap; gap: var(--space-4); padding-block: var(--space-4); } .menubar { width: 100%; justify-content: flex-end; } .menubar-utils { gap: var(--space-4); } .header-text-control { font-size: var(--font-pixel-tag); } .order-lines li { grid-template-columns: minmax(0, 1fr) auto; } .order-line-price { grid-column: 2; } }
+@media (max-width: 560px) { .app-chrome { flex-wrap: nowrap; gap: var(--space-4); } .menubar { justify-content: flex-end; } .menubar-utils { gap: var(--space-4); } .header-text-control { font-size: var(--font-pixel-tag); } .order-lines li { grid-template-columns: minmax(0, 1fr) auto; } .order-line-price { grid-column: 2; } }
 
 /* Single icon size contract: 11 source pixels at exactly 2x. */
 .site-shell svg.site-pixel-icon { width: 22px !important; height: 22px !important; min-width: 22px; min-height: 22px; flex: 0 0 22px; }
