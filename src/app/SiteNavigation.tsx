@@ -105,7 +105,7 @@ export function SiteNavigation({ preferences, route, t }: { preferences: ReturnT
       <div className="titlebar">
         <a className="titlebar-app" href="#/" onClick={(event) => { event.preventDefault(); goHome() }}>
           <img src="/assets/moonsprite-logo.svg" width="16" height="16" alt="" />
-          <span className="titlebar-app-title">MoonSprite</span>
+          <img className="titlebar-wordmark" src="/assets/moonsprite-wordmark.svg" alt="" width="172" height="26" />
 
         </a>
 

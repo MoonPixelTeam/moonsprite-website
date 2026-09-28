@@ -149,7 +149,7 @@
 
 }
 @media (max-width: 560px) {
-  .titlebar-app span { font-size: var(--font-small); }
+  img.titlebar-wordmark { width: 159px; height: 24px; }
   .titlebar-app img { width: 24px; height: 24px; }
   .titlebar-app { gap: var(--space-4); }
   .menubar-utils { gap: 0; }
