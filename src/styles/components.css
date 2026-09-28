@@ -7,7 +7,7 @@
    按页头留白取高度 26px（约 174x26），宽度由原生比例推导，允许非整数倍缩放，
    由浏览器平滑重采样。素材自带配色，不需按主题改色。
    同名的 img.footer-wordmark 在 responsive.css 里负责页脚尺寸。 */
-img.titlebar-wordmark { width: auto; height: 26px; aspect-ratio: 107 / 16; }
+img.titlebar-wordmark { width: 173.9px; height: 26px; }
 .titlebar-app small { overflow: hidden; color: var(--text-4); font-size: var(--font-small); text-overflow: ellipsis; white-space: nowrap; }
 .titlebar-controls { display: flex; }
 .titlebar-controls i { display: grid; place-items: center; width: 36px; height: 32px; color: var(--text-3); font-family: var(--font-pixel); font-size: var(--font-pixel-tag); font-style: normal; line-height: 1; }
@@ -28,7 +28,7 @@ img.titlebar-wordmark { width: auto; height: 26px; aspect-ratio: 107 / 16; }
    control next to the cart. */
 .cart-button-icon { position: relative; }
 .account-button { text-decoration: none; }
-.lang-menu { height: 36px; }
+.lang-menu { position: relative; height: 36px; }
 .language-button, .menu-button { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-3); height: 32px; padding: 0 var(--space-4); color: var(--text-3); background: transparent; border: 1px solid transparent; cursor: pointer; font-size: var(--font-small); }
 .language-button svg { width: 15px; }
 .language-button:hover { color: var(--text); }

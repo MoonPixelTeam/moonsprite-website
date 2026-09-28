@@ -15,14 +15,16 @@
 img.footer-wordmark { width: auto; height: 32px; aspect-ratio: 107 / 16; }
 
 /*
- * 页头单行时的字标收缩：宽度上限按「视口 − 内边距 − gap − 工具组」逐档给足余量，
- * 高度由 aspect-ratio 推导，所以像素比例始终不变。
+ * 页头始终一行的字标尺寸：宽度按「视口 − 内边距 − gap − 工具组(212)」逐档留足余量，
+ * 高度一律等于 宽度 × 16/107（原生 107x16），比例严格不变。
+ * 高度显式写出而不交给 aspect-ratio：后者推导出的高度会被吸附到整像素，
+ * 窄尺寸下比例会出现可见偏差。
  */
-@media (max-width: 560px) { img.titlebar-wordmark { max-width: 140px; } }
-@media (max-width: 480px) { img.titlebar-wordmark { max-width: 115px; } }
-@media (max-width: 430px) { img.titlebar-wordmark { max-width: 100px; } }
-@media (max-width: 390px) { img.titlebar-wordmark { max-width: 88px; } }
-@media (max-width: 360px) { img.titlebar-wordmark { max-width: 72px; } }
+@media (max-width: 560px) { img.titlebar-wordmark { width: 140.4px; height: 21px; } }
+@media (max-width: 480px) { img.titlebar-wordmark { width: 113.7px; height: 17px; } }
+@media (max-width: 430px) { img.titlebar-wordmark { width: 100.3px; height: 15px; } }
+@media (max-width: 390px) { img.titlebar-wordmark { width: 86.9px; height: 13px; } }
+@media (max-width: 360px) { img.titlebar-wordmark { width: 73.6px; height: 11px; } }
 @media (max-width: 380px) { .app-chrome { padding-inline: var(--space-4); } }
 .footer-bottom p { color: var(--text-4); font-size: var(--font-small); }
 
