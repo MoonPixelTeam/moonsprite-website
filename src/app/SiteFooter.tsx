@@ -16,6 +16,7 @@ export function SiteFooter({ t }: { t: Copy }) {
   return (
     <footer className="site-footer">
       <div className="content-wrap footer-cols">
+        <nav className="footer-col" aria-label={columns.download.title}><h3>{columns.download.title}</h3><ul>{columns.download.items.map((item) => <FooterLink key={item.key} linkKey={item.key} label={item.label} />)}</ul></nav>
         <nav className="footer-col" aria-label={columns.community.title}><h3>{columns.community.title}</h3><ul>{columns.community.items.map((item) => <FooterLink key={item.key} linkKey={item.key} label={item.label} />)}</ul></nav>
         <nav className="footer-col" aria-label={columns.follow.title}><h3>{columns.follow.title}</h3><ul>{columns.follow.items.map((item) => <FooterLink key={item.key} linkKey={item.key} label={item.label} />)}</ul></nav>
         <nav className="footer-col" aria-label={columns.docs.title}><h3>{columns.docs.title}</h3><ul>{columns.docs.items.map((item) => <FooterLink key={item.key} linkKey={item.key} label={item.label} />)}</ul></nav>

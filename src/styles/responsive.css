@@ -1,7 +1,7 @@
 /* ---------- footer ---------- */
 
 .site-footer { background: var(--panel); border-top: 1px solid var(--divider); }
-.footer-cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-20); padding: var(--space-28) 0 var(--space-24); }
+.footer-cols { display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-20); padding: var(--space-28) 0 var(--space-24); }
 .footer-col h3 { display: inline-flex; align-items: center; gap: var(--space-4); margin-bottom: var(--space-9); color: var(--text-3); font-family: var(--font-pixel); font-size: var(--font-pixel-label); font-weight: 700; }
 .footer-col ul { display: grid; gap: var(--space-6); list-style: none; }
 .footer-col a, .footer-col .pending { display: inline-flex; align-items: center; gap: var(--space-3); color: var(--text-3); font-size: var(--font-body); }

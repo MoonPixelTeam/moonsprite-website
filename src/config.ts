@@ -13,6 +13,8 @@ export const SITE_CONFIG = {
     issues: 'https://github.com/MoonPixelTeam/moonsprite/issues',
     discussions: 'https://github.com/MoonPixelTeam/moonsprite/discussions',
     steam: '',
+    /* Steam 商店页地址。可留空：页脚会把这一项渲染成不可点的“待上线”状态。 */
+    steamStore: '',
     x: '',
     xiaohongshu: '',
     bilibili: '',

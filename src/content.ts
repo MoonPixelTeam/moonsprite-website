@@ -244,7 +244,7 @@ export interface Copy {
     colGross: string
   }
   cta: { eyebrow: string; title: string; body: string }
-  footer: { tagline: string; columns: { community: FooterColumn; follow: FooterColumn; docs: FooterColumn; more: FooterColumn }; copyright: string; source: string; license: string }
+  footer: { tagline: string; columns: { download: FooterColumn; community: FooterColumn; follow: FooterColumn; docs: FooterColumn; more: FooterColumn }; copyright: string; source: string; license: string }
   marketPage: MarketContent
   accountSettings: {
     title: string; back: string
@@ -772,6 +772,12 @@ export const copy: Record<Language, Copy> = {
     footer: {
       tagline: '原创源码可见的 Windows 像素画工作台。',
       columns: {
+        download: {
+          title: '下载安装',
+          items: [
+            { key: 'steamStore', label: 'Steam' },
+          ],
+        },
         community: {
           title: '社区',
           items: [
@@ -1116,6 +1122,12 @@ export const copy: Record<Language, Copy> = {
     footer: {
       tagline: 'An original source-available pixel art workstation for Windows.',
       columns: {
+        download: {
+          title: 'Download',
+          items: [
+            { key: 'steamStore', label: 'Steam' },
+          ],
+        },
         community: {
           title: 'Community',
           items: [
