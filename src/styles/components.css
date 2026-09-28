@@ -3,14 +3,11 @@
 .app-chrome { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; gap: var(--space-10); min-height: 76px; padding-inline: max(var(--space-12), calc((100% - var(--max)) / 2)); background: color-mix(in srgb, var(--bg) 82%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); backdrop-filter: blur(16px) saturate(125%); }
 .titlebar { display: flex; flex-shrink: 0; align-items: center; }
 .titlebar-app { display: inline-flex; align-items: center; }
-/* 页头品牌只剩这张字标：原生 118x18 的单行像素素材，矢量化为 crispEdges。
-   横向列块含 1px 与 3px 的奇数块，只有整数倍缩放才不破坏像素单位，因此固定 100%（1:1，
-   一个原生像素对应一个 CSS 像素）。素材自带配色（含紫色暗部），不需要按主题改色。
+/* 页头品牌只剩这张字标：原生 107x16 的单行像素素材，矢量化为 crispEdges。
+   按页头留白取高度 26px（约 174x26），宽度由原生比例推导，允许非整数倍缩放，
+   由浏览器平滑重采样。素材自带配色，不需按主题改色。
    同名的 img.footer-wordmark 在 responsive.css 里负责页脚尺寸。 */
-img.titlebar-wordmark {
-    width: 118px;
-    height: 18px;
-  }
+img.titlebar-wordmark { width: auto; height: 26px; aspect-ratio: 107 / 16; }
 .titlebar-app small { overflow: hidden; color: var(--text-4); font-size: var(--font-small); text-overflow: ellipsis; white-space: nowrap; }
 .titlebar-controls { display: flex; }
 .titlebar-controls i { display: grid; place-items: center; width: 36px; height: 32px; color: var(--text-3); font-family: var(--font-pixel); font-size: var(--font-pixel-tag); font-style: normal; line-height: 1; }
