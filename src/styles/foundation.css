@@ -48,6 +48,8 @@
   --danger: #ff8583;
   --success: #89c79c;
   --danger-soft: #38272b;
+  /* 页头高度：.app-chrome 的 min-height，窄屏换行时会变高，按断点覆盖。 */
+  --header-height: 76px;
   --pet-color: var(--text-3);
   --pack-void: var(--control);
   --surface-active: #263449;

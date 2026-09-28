@@ -41,9 +41,12 @@ img.footer-wordmark { width: auto; height: 32px; aspect-ratio: 107 / 16; }
   .footer-cols { grid-template-columns: repeat(2, 1fr); gap: var(--space-20) var(--space-16); }
 }
 
-@media (max-width: 880px) {
+/* 与导航隐藏点保持一致：1100px 以下桌面导航收起，改由汉堡菜单进入，
+   避免中间宽度区间没有任何导航入口。 */
+@media (max-width: 1100px) {
   .menu-button { display: inline-flex; }
-  .menubar-tabs { position: fixed; top: 76px; right: 0; left: 0; z-index: 49; display: none; flex-direction: column; align-items: stretch; gap: 0; padding: var(--space-4); background: color-mix(in srgb, var(--bg) 88%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); backdrop-filter: blur(16px) saturate(125%); }
+  /* top: 100% 让面板贴着页头底边，页头换行变高时自动跟随，不需要同步数值。 */
+  .menubar-tabs { position: absolute; top: 100%; right: 0; left: 0; z-index: 49; display: none; flex-direction: column; align-items: stretch; gap: 0; padding: var(--space-4); background: color-mix(in srgb, var(--bg) 96%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); backdrop-filter: blur(16px) saturate(125%); }
   .menubar-tabs.open { display: flex; }
   .menubar-tabs > a { padding: var(--space-5) var(--space-4); border-bottom: 1px solid var(--divider); font-size: var(--font-body); }
   .menubar-tabs > a:last-child { border-bottom: 0; }
@@ -51,7 +54,8 @@ img.footer-wordmark { width: auto; height: 32px; aspect-ratio: 107 / 16; }
 }
 
 @media (max-width: 760px) {
-  html { scroll-padding-top: 92px; }
+  /* 锚点滚动留出页头高度：窄屏页头会换行，用变量而非固定 92px。 */
+  html { scroll-padding-top: calc(var(--header-height) + 16px); }
   .content-wrap { width: calc(100% - 32px); }
   .page-shell { width: calc(100% - 32px); grid-template-columns: 1fr; gap: var(--space-13); padding: var(--space-10) 0 var(--space-48); }
   .page-shell.no-right { grid-template-columns: 1fr; }
@@ -140,7 +144,9 @@ img.footer-wordmark { width: auto; height: 32px; aspect-ratio: 107 / 16; }
 }
 @media (max-width: 880px) {
   .app-chrome { padding-inline: var(--space-7); }
-  .menubar-tabs { max-height: calc(100dvh - 76px); overflow-y: auto; }
+  /* 页头在窄屏换行后变高，同步变量，供移动菜单与锚点滚动定位使用。 */
+  :root { --header-height: 90px; }
+  .menubar-tabs { max-height: calc(100dvh - var(--header-height)); overflow-y: auto; }
 
 
 

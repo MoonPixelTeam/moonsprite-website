@@ -64,7 +64,7 @@ img.titlebar-wordmark { width: auto; height: 26px; aspect-ratio: 107 / 16; }
 /* ---------- shared panel parts ---------- */
 
 .panel-header { display: flex; align-items: center; gap: var(--space-5); min-height: 43px; padding: 0 var(--space-6); background: var(--raised); border-bottom: 1px solid var(--border); color: var(--text-2); font-size: var(--font-small); font-weight: 600; }
-.panel-header strong { font-weight: 600; }
+.panel-header strong { min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .panel-header svg { width: 14px; height: 14px; flex: 0 0 auto; color: var(--accent); }
 .panel-header .tile-icon { width: 20px; height: 20px; border: 1px solid var(--border); }
 .panel-header .tile-icon svg { width: 12px; height: 12px; }
