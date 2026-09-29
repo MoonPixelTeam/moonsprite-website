@@ -1,5 +1,5 @@
 import { createContext, createElement, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { api } from '../api'
+import { api, apiIsLocal } from '../api'
 import type { StudioProduct } from '../api'
 import { MARKET_PRODUCTS, type MarketProduct } from './catalog'
 import { useData } from '../data/store'
@@ -18,6 +18,11 @@ export function studioToProduct(item: StudioProduct, catalogue: StudioProduct[] 
     tagline: item.tagline,
     body: item.body,
     price: item.price,
+    updatedAt: item.updatedAt,
+    soldCount: item.soldCount,
+    cartCount: item.cartCount,
+    compatibleVersion: item.compatibleVersion,
+    download: item.download,
     size: { zh: item.size, en: item.size },
     formats: item.formats,
     tags: item.tags,
@@ -75,8 +80,8 @@ function useCatalogueSource(): CatalogueState {
   }, [])
 
   const products = useMemo(() => [
-    ...published.filter((product) => statusOf(product.id) === 'approved'),
-    ...MARKET_PRODUCTS,
+    ...published.filter((product) => !apiIsLocal || statusOf(product.id) === 'approved'),
+    ...(apiIsLocal ? MARKET_PRODUCTS : []),
   ], [published, statusOf])
   return { products, loading }
 }

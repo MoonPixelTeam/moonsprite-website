@@ -45,7 +45,7 @@ export function OrderList({ orders, t, language, showOrderId = true }: {
           <a href={`#/orders/${order.id}`}><strong>{order.id}</strong></a>
           <time dateTime={new Date(order.createdAt).toISOString()}>{new Date(order.createdAt).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}</time>
         </div>
-        <span className="purchase-status">{t.marketPage.orders.statusPaid}</span>
+        <span className="purchase-status">{order.status === 'pending' ? (language === 'zh' ? '待付款' : 'Awaiting payment') : t.marketPage.orders.statusPaid}</span>
         <div className="order-head-total"><span>{t.marketPage.checkout.total}</span><em>{formatPrice(order.total, language)}</em></div>
       </header>}
       <ul className="order-lines">
@@ -58,7 +58,7 @@ export function OrderList({ orders, t, language, showOrderId = true }: {
            */
           const file = product?.download
           const hasStored = storedIds.includes(line.id)
-          const downloadable = Boolean(file) || hasStored
+          const downloadable = order.status !== 'pending' && (Boolean(file) || hasStored)
           return <li key={line.id}>
             <span className="order-line-thumb"><PackImage product={product ?? { id: line.id, category: 'assets', name: { zh: line.name, en: line.name }, tagline: { zh: '', en: '' }, body: { zh: '', en: '' }, price: line.price, size: { zh: '', en: '' }, formats: [], includes: [] }} t={t} alt="" /></span>
             <span className="order-line-name">

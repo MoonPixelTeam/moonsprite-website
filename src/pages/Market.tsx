@@ -1,3 +1,7 @@
+import { useRelatedProducts } from '../market/useRelatedProducts'
+import { ProductFacts } from '../market/ProductFacts'
+import { formatProductPrice } from '../market/catalog'
+import { PetPlayground } from '../market/PetPlayground'
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { ControlRow, FormField, Alert, Button, Checkbox, Chip, Field, IconButton, Input, Panel } from '../ui'
 import { PixelArrowLeft as ArrowLeft, PixelCart as CartIcon, PixelCheck as Check, PixelChevronRight as ChevronRight, PixelMinus as Minus, PixelPlus as Plus, PixelHot as HotIcon, PixelTrash2 as Trash2, PixelX as X } from '../ui/icons'
@@ -26,7 +30,7 @@ import { AddButton, CategoryTag, PackGrid, PackImage, PopularPackCard, animation
 import { useCart, useCartStore, type Cart } from '../market/cart'
 
 /** The shelf leads with the one pack that has real artwork in it, then the asset packs. */
-const SHELF_FEATURED = ['pet-nailong', 'asset-cavern', 'asset-character', 'asset-interface', 'asset-icons']
+const SHELF_FEATURED = ['pet-dolphin-girl', 'pet-mooncat', 'pet-sakuya', 'pet-herdboy', 'pet-nailong', 'asset-cavern', 'asset-character', 'asset-interface', 'asset-icons']
 
 /*
  * Detail-page pieces. The card and its cart live in market/PackCard.tsx because the
@@ -51,12 +55,12 @@ function PriceRow({ product, t, language }: { product: MarketProduct; t: Copy; l
   if (product.category === 'bundles') {
     const full = bundleValue(product)
     return <div className="pack-price">
-      <strong>{formatPrice(product.price, language)}</strong>
+      <strong>{formatProductPrice(product.price, language)}</strong>
       {full > product.price && <><s>{formatPrice(full, language)}</s>
       <em>{t.marketPage.card.save} {formatPrice(full - product.price, language)}</em></>}
     </div>
   }
-  return <div className="pack-price"><strong>{formatPrice(product.price, language)}</strong></div>
+  return <div className="pack-price"><strong>{formatProductPrice(product.price, language)}</strong></div>
 }
 
 function PetStrip({ pets, animation, px = 5 }: { pets: PetId[]; animation: PetAnimationId; px?: number }) {
@@ -173,6 +177,7 @@ function CartDrawer({ open, cart, t, language, onClose }: {
   const [agreed, setAgreed] = useState(false)
   const [agreeError, setAgreeError] = useState(false)
   const [paying, setPaying] = useState(false)
+  const [paymentType, setPaymentType] = useState<'alipay' | 'wxpay'>('alipay')
 
   /*
    * Two steps, because a purchase needs a confirmation: the cart asks to review, the
@@ -188,10 +193,10 @@ function CartDrawer({ open, cart, t, language, onClose }: {
     setStep('review')
   }
 
-  const [paymentError, setPaymentError] = useState(false)
+  const [paymentError, setPaymentError] = useState<string | null>(null)
   const pay = async () => {
     if (paying) return
-    setPaymentError(false)
+    setPaymentError(null)
     if (!agreed) {
       setAgreeError(true)
       return
@@ -203,10 +208,15 @@ function CartDrawer({ open, cart, t, language, onClose }: {
       price: product.price,
       quantity,
     }))
-    const result = await addOrder(lines)
+    const result = await addOrder(lines, paymentType)
     setPaying(false)
     if (!result.ok) {
-      setPaymentError(true)
+      setPaymentError(result.error ?? 'order')
+      return
+    }
+    if (result.order?.status === 'pending' && result.order.paymentUrl) {
+      cart.clear()
+      window.location.assign(result.order.paymentUrl)
       return
     }
     cart.clear()
@@ -247,7 +257,7 @@ function CartDrawer({ open, cart, t, language, onClose }: {
           <ul className="cart-review-lines">
             {cart.lines.map(({ product, quantity }) => <li key={product.id}>
               <span>{productCopy(product.name, language)}<em>×{quantity}</em></span>
-              <span>{formatPrice(product.price * quantity, language)}</span>
+              <span>{formatProductPrice(product.price * quantity, language)}</span>
             </li>)}
           </ul>
           <dl className="cart-review-total">
@@ -258,18 +268,19 @@ function CartDrawer({ open, cart, t, language, onClose }: {
           {/* The licence is stated and acknowledged here, not assumed. */}
           <div className="cart-agreement">
             <strong>{market.checkout.agreementTitle}</strong>
-            <p>{market.checkout.agreement}</p>
+            <p>{SITE_CONFIG.apiBaseUrl ? (language === 'zh' ? '付款前请阅读数字内容许可与交易条款。支付将通过 ZPAY 完成，实际以人民币结算，确认金额会显示在收银台。' : 'Read the digital content licence and transaction terms before paying. ZPAY settles in CNY; confirm the amount at checkout.') : market.checkout.agreement}</p>
             <a href="#/license" onClick={onClose}>{market.checkout.agreementLink}</a>
-            <Checkbox checked={agreed} onChange={(next) => { setAgreed(next); setAgreeError(false) }} label={market.checkout.agreeLabel} />
+            <Checkbox checked={agreed} onChange={(next) => { setAgreed(next); setAgreeError(false) }} label={SITE_CONFIG.apiBaseUrl ? (language === 'zh' ? '我已阅读许可与交易条款' : 'I have read the licence and transaction terms') : market.checkout.agreeLabel} />
           </div>
 
           <div className="cart-review-actions">
+            {SITE_CONFIG.apiBaseUrl && cart.subtotal > 0 && <Field label={language === 'zh' ? '支付方式' : 'Payment method'}><select value={paymentType} disabled={paying} onChange={event => setPaymentType(event.target.value as 'alipay' | 'wxpay')}><option value="alipay">{language === 'zh' ? '支付宝' : 'Alipay'}</option><option value="wxpay">{language === 'zh' ? '微信支付' : 'WeChat Pay'}</option></select></Field>}
             <Button variant="primary" disabled={paying} onClick={pay}>
-              {paying ? market.checkout.paying : market.checkout.pay}
+              {paying ? market.checkout.paying : SITE_CONFIG.apiBaseUrl ? (language === 'zh' ? (cart.subtotal > 0 ? '创建订单并付款' : '领取免费素材') : (cart.subtotal > 0 ? 'Create order & pay' : 'Claim free packs')) : market.checkout.pay}
             </Button>
             <Button onClick={() => setStep('cart')}>{market.checkout.back}</Button>
           </div>
-          {paymentError && <Alert tone="danger" role="alert">{language === 'zh' ? '订单未完成。请检查登录状态，刷新商品价格与上架状态后重试。' : 'Order failed. Check your session and refresh product prices and availability before retrying.'}</Alert>}
+          {paymentError && <Alert tone="danger" role="alert">{paymentError === 'payment-unavailable' ? (language === 'zh' ? '收款暂未配置，当前只能领取免费素材。' : 'Payments are not configured. Only free packs are available.') : paymentError === 'pending-order' ? (language === 'zh' ? '存在包含这些素材的待付款订单，请前往购买记录继续付款。' : 'These packs have a pending order. Continue payment from Purchases.') : language === 'zh' ? '订单未完成。请检查登录状态，刷新商品价格与上架状态后重试。' : 'Order failed. Check your session and refresh product prices and availability before retrying.'}</Alert>}
           {agreeError && <Alert tone="danger" role="alert">{market.checkout.mustAgree}</Alert>}
         </div>
         : <>
@@ -294,18 +305,16 @@ function CartDrawer({ open, cart, t, language, onClose }: {
                     <IconButton className="cart-remove" onClick={() => cart.remove(product.id)} label={`${market.cart.remove} ${productCopy(product.name, language)}`} icon={<Trash2 aria-hidden="true" />} />
                   </div>
                 </div>
-                <span className="cart-line-price">{formatPrice(product.price * quantity, language)}</span>
+                <span className="cart-line-price">{formatProductPrice(product.price * quantity, language)}</span>
               </li>)}
             </ul>}
 
           <footer className="cart-foot">
             <div className="cart-subtotal"><span>{market.cart.subtotal}</span><strong>{formatPrice(cart.subtotal, language)}</strong></div>
             <p className="cart-note">{market.cart.note}</p>
-            {SITE_CONFIG.steamUrl
-              ? <Button variant="primary" href={SITE_CONFIG.steamUrl} target="_blank">{market.cart.checkout}</Button>
-              : <Button variant="primary" onClick={checkout} disabled={cart.lines.length === 0}>{account ? market.cart.checkout : market.cart.signInToBuy}</Button>}
+            <Button variant="primary" onClick={checkout} disabled={cart.lines.length === 0}>{account ? market.cart.checkout : market.cart.signInToBuy}</Button>
             <span className="cart-status">
-              {SITE_CONFIG.steamUrl || account ? market.cart.checkoutSoon : market.cart.checkoutAccount}
+              {account ? market.cart.checkoutSoon : market.cart.checkoutAccount}
             </span>
             {cart.lines.length > 0 && <Button size="compact" onClick={cart.clear}>{market.cart.clear}</Button>}
           </footer>
@@ -320,6 +329,7 @@ function MarketHero({ t, language }: { t: Copy; language: Language }) {
   const featured = SHELF_FEATURED
     .map((id) => catalogue.find((product) => product.id === id))
     .filter((product): product is MarketProduct => Boolean(product))
+    .slice(0, 6)
 
   return <section className="market-shelf">
     <div className="content-wrap">
@@ -518,7 +528,7 @@ export function PackDetailPage({ t, language, productId, previewProduct }: { t: 
 
   const { product: listedProduct, siblings, loading } = useProduct(productId)
   const product = previewProduct ?? listedProduct
-  const related = product && !previewProduct ? siblings.filter((item) => item.id !== product.id && item.category === product.category).slice(0, 4) : []
+  const { related, shuffleRelated, canShuffle } = useRelatedProducts(product, siblings, Boolean(previewProduct))
   useEffect(() => { setPreviewImage(0) }, [product?.id])
 
   if (!product && loading) return <main id="main" className="market" aria-busy="true">
@@ -570,7 +580,7 @@ export function PackDetailPage({ t, language, productId, previewProduct }: { t: 
       <div className="asset-layout">
         <div className="asset-content">
           <figure className={hasPreview ? 'asset-preview' : 'asset-preview empty'}>
-            {hasPreview ? <>
+            {isPetProduct(product) && product.animations ? <PetPlayground key={product.id} animations={product.animations} language={language} name={productCopy(product.name, language)} /> : hasPreview ? <>
               <div className={previewSurface === 'grid' ? 'asset-preview-stage grid' : 'asset-preview-stage'}>
                 {gallery.length > 0 ? <img className="pack-image" src={gallery[Math.min(previewImage, gallery.length - 1)]} alt={productCopy(product.name, language)} /> : <PackImage product={product} t={t} alt={productCopy(product.name, language)} zoom={previewZoom} />}
               </div>
@@ -611,7 +621,7 @@ export function PackDetailPage({ t, language, productId, previewProduct }: { t: 
                       <strong>{productCopy(item.name, language)}</strong>
                       <span>{productCopy(item.tagline, language)}</span>
                     </span>
-                    <span className="bundle-item-price">{formatPrice(item.price, language)}</span>
+                    <span className="bundle-item-price">{formatProductPrice(item.price, language)}</span>
                     <ChevronRight aria-hidden="true" />
                   </a>
                 </li>)}
@@ -628,10 +638,11 @@ export function PackDetailPage({ t, language, productId, previewProduct }: { t: 
           <Panel>
             <div className="asset-purchase-heading"><span>{language === 'zh' ? '数字资源包' : 'Digital asset pack'}</span><span>{owns(product.id) ? market.card.ownedPack : product.formats[0]}</span></div>
             <PriceRow product={product} t={t} language={language} />
+            <ProductFacts product={product} language={language} />
             <div className="asset-purchase-actions">
               {previewProduct ? <Button variant="primary" block disabled>{market.card.add}</Button> : owns(product.id)
                 ? <Button href="#/purchases" variant="primary" block>{language === 'zh' ? '下载已购资源' : 'Download purchased pack'}</Button>
-                : <Button variant="primary" block className="cart-action" onClick={() => { if (cart.has(product.id)) setCartOpen(true); else cart.add(product.id) }}>{cart.has(product.id) ? (language === 'zh' ? '查看购物车' : 'View cart') : market.card.add}</Button>}
+                : <Button variant="primary" block className="cart-action" onClick={() => { if (cart.has(product.id)) setCartOpen(true); else cart.add(product.id) }}>{cart.has(product.id) ? (language === 'zh' ? '已加入购物车 · 查看' : 'In cart · View') : market.card.add}</Button>}
             </div>
             <p className="asset-purchase-note">{market.detail.buy}</p>
             <div className="asset-specifications">
@@ -674,10 +685,13 @@ export function PackDetailPage({ t, language, productId, previewProduct }: { t: 
     </div>
     {related.length > 0 && <section className="market-browse related">
       <div className="content-wrap">
-        <header className="page-head market-head"><h2>{market.detail.related}</h2></header>
+        <header className="page-head market-head related-heading"><h2>{market.detail.related}</h2><Button size="compact" onClick={shuffleRelated} disabled={!canShuffle}>{language === 'zh' ? '换一换' : 'Shuffle'}</Button></header>
         <PackGrid products={related} t={t} language={language} />
       </div>
     </section>}
     {!previewProduct && <CartDrawer open={cartOpen} cart={cart} t={t} language={language} onClose={() => setCartOpen(false)} />}
   </Root>
 }
+
+
+

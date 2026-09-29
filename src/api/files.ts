@@ -9,7 +9,18 @@
  * Same prototype caveat as the rest of src/api: this is one browser's IndexedDB. A real
  * backend would accept the upload once, store it, and serve it from a signed URL.
  */
-import { api } from '../api'
+import { api, apiIsLocal } from '../api'
+import { request, ApiError } from './transport'
+
+type RemoteFile = Omit<StoredFile, 'blob'> & { url: string }
+async function remoteFile(productId: string): Promise<StoredFile | undefined> {
+  let metadata: RemoteFile
+  try { metadata = await request<RemoteFile>('/files/' + encodeURIComponent(productId)) }
+  catch (error) { if (error instanceof ApiError && error.status === 404) return undefined; throw error }
+  const response = await fetch(metadata.url, { signal: AbortSignal.timeout(30_000) })
+  if (!response.ok) throw new ApiError('download', response.status)
+  return { ...metadata, blob: await response.blob() }
+}
 
 const DB_NAME = 'moonsprite-files'
 const DB_VERSION = 1
@@ -50,6 +61,12 @@ async function withStore<T>(mode: IDBTransactionMode, work: (store: IDBObjectSto
 }
 
 export async function putFile(productId: string, file: File): Promise<StoredFile> {
+  if (!apiIsLocal) {
+    const form = new FormData(); form.append('file', file)
+    const metadata = await request<Omit<StoredFile, 'blob'>>('/files/' + encodeURIComponent(productId), { method: 'PUT', body: form })
+    window.dispatchEvent(new Event('moonsprite:files'))
+    return { ...metadata, blob: file }
+  }
   const record: StoredFile = {
     productId,
     name: file.name,
@@ -65,6 +82,7 @@ export async function putFile(productId: string, file: File): Promise<StoredFile
 }
 
 export async function getFile(productId: string): Promise<StoredFile | undefined> {
+  if (!apiIsLocal) return remoteFile(productId)
   try {
     return await withStore<StoredFile | undefined>('readonly', (store) => store.get(productId) as IDBRequest<StoredFile | undefined>)
   } catch (error) {
@@ -74,6 +92,7 @@ export async function getFile(productId: string): Promise<StoredFile | undefined
 }
 
 export async function removeFile(productId: string): Promise<void> {
+  if (!apiIsLocal) { await request('/files/' + encodeURIComponent(productId), { method: 'DELETE' }); window.dispatchEvent(new Event('moonsprite:files')); return }
   try {
     await withStore('readwrite', (store) => store.delete(productId))
   } catch (error) {
@@ -84,6 +103,7 @@ export async function removeFile(productId: string): Promise<void> {
 
 /** Ids that have a file, for lists that need to know before rendering a download button. */
 export async function listFileIds(): Promise<string[]> {
+  if (!apiIsLocal) return request<string[]>('/files')
   try {
     const keys = await withStore<IDBValidKey[]>('readonly', (store) => store.getAllKeys())
     return keys.map((key) => String(key))
@@ -95,7 +115,7 @@ export async function listFileIds(): Promise<string[]> {
 
 /** Whether this build can store files at all. */
 export function filesSupported(): boolean {
-  return typeof indexedDB !== 'undefined'
+  return !apiIsLocal || typeof indexedDB !== 'undefined'
 }
 
 /**
@@ -105,6 +125,10 @@ export function filesSupported(): boolean {
  * the click has been dispatched.
  */
 export async function downloadProduct(productId: string, fallbackPath: string | undefined, filename: string): Promise<boolean> {
+  if (!apiIsLocal) {
+    const { url } = await request<{ url: string }>('/downloads/' + encodeURIComponent(productId), { method: 'POST' })
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = filename; anchor.rel = 'noopener'; document.body.append(anchor); anchor.click(); anchor.remove(); return true
+  }
   const orders = await api.orders.list()
   if (!orders.some((order) => order.lines.some((line) => line.id === productId))) return false
   const stored = await getFile(productId)

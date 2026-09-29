@@ -1,13 +1,15 @@
 import { ActionButton } from '../ui'
 import { competitionWorks } from '../competitions/data'
 import { MediaPreview, type PreviewMedia } from '../ui/MediaPreview'
+import { AutoVideo } from '../ui/AutoVideo'
 import { useState } from 'react'
 import { PixelArrowRight as ArrowRight, PixelChevronLeft as ChevronLeft, PixelChevronRight as ChevronRight } from '../ui/icons'
-import type { Copy, Language } from '../content'
+import { featureFull, featurePoster, featureThumb, type Copy, type Language } from '../content'
 import { Button, IconButton, SteamButton, SectionHeading } from '../ui'
 import { SITE_CONFIG } from '../config'
 import { useCatalogue } from '../market/catalogue'
 import { PopularPackCard } from '../market/PackCard'
+import { DownloadPlatforms } from '../app/DownloadPlatforms'
 
 const HERO_SLIDES = [
   '/assets/hero/home-banner-fire.png',
@@ -51,17 +53,19 @@ export function Home({ t, language }: { t: Copy; language: Language }) {
       </div>
     </section>
 
+    <DownloadPlatforms language={language} />
+
     <section className="features" id="features">
       <div className="content-wrap">
         <SectionHeading title={t.features.title} description={t.features.description} actions={<Button href="#/docs">{language === 'zh' ? '查看更多功能' : 'Explore all features'}<ArrowRight aria-hidden="true" /></Button>} />
         <div className="masonry">
           {t.features.items.map((item) => <article className="masonry-card" key={item.icon}>
-            <div className="panel-header"><strong>{item.title}</strong></div>
-            <ActionButton type="button" className="gif-placeholder" aria-label={`${language === 'zh' ? '放大预览：' : 'Enlarge preview: '}${item.title}`} onClick={() => setPreview({ slides: item.gifs, title: item.title, description: item.gifs?.length ? item.body : (language === 'zh' ? '功能演示 GIF 待补充。' : 'The feature GIF will be added later.') })}>
-              {item.gifs?.[0] && <img src={item.gifs[0].src} alt={item.gifs[0].title} loading="lazy" decoding="async" />}
-              <span className="gif-tag">GIF</span>
-            </ActionButton>
-            <p className="masonry-copy">{item.body}</p>
+              <div className="panel-header"><strong>{item.title}</strong></div>
+              <ActionButton type="button" className="gif-placeholder" aria-label={`${language === 'zh' ? '放大预览：' : 'Enlarge preview: '}${item.title}`} onClick={() => setPreview({ slides: item.media?.map((media) => ({ src: featurePoster(media), video: featureFull(media), title: media.title })), title: item.title, description: item.media?.length ? item.body : (language === 'zh' ? '功能演示 GIF 待补充。' : 'The feature GIF will be added later.') })}>
+                {item.media?.[0] && <AutoVideo src={featureThumb(item.media[0])} poster={featurePoster(item.media[0])} />}
+                <span className="gif-tag">GIF</span>
+              </ActionButton>
+              <p className="masonry-copy">{item.body}</p>
           </article>)}
         </div>
       </div>

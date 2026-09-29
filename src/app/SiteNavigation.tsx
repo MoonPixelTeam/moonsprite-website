@@ -104,7 +104,7 @@ export function SiteNavigation({ preferences, route, t }: { preferences: ReturnT
     <header className="app-chrome">
       <div className="titlebar">
         <a className="titlebar-app" href="#/" aria-label="MoonSprite" onClick={(event) => { event.preventDefault(); goHome() }}>
-          <img className="titlebar-wordmark" src="/assets/moonsprite-wordmark.svg" alt="" width="172" height="26" />
+          <img className="titlebar-wordmark" src="/assets/moonsprite-wordmark.png" alt="" width="172" height="26" />
         </a>
 
       </div>

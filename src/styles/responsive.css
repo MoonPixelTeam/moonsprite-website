@@ -11,7 +11,7 @@
 .footer-bottom { display: grid; place-items: center; gap: var(--space-7); padding: var(--space-20) 0 var(--space-22); border-top: 1px solid var(--divider); }
 .footer-logo { display: flex; align-items: center; }
 .footer-logo img { image-rendering: pixelated; }
-/* 与页头同一张素材，页脚居中所以略大，同样按原生比例平滑缩放。 */
+/* 与页头同一张素材，页脚居中所以略大，同样按原生比例缩放。 */
 img.footer-wordmark { width: auto; height: 32px; aspect-ratio: 107 / 16; }
 
 /*
@@ -193,7 +193,7 @@ img.footer-wordmark { width: auto; height: 32px; aspect-ratio: 107 / 16; }
 @media (max-width: 980px) {
   .hero-inner { padding-inline: var(--space-16); }
   .hero-pagination { right: var(--space-16); }
-  .masonry { columns: 3; }
+  .masonry { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -205,7 +205,7 @@ img.footer-wordmark { width: auto; height: 32px; aspect-ratio: 107 / 16; }
   .hero-actions { gap: var(--space-7); }
   .hero-nav { top: 42%; right: var(--space-4); left: var(--space-4); }
   .hero-pagination { right: var(--space-9); bottom: var(--space-8); }
-  .masonry { columns: 2; }
+  .masonry { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .masonry .masonry-card .gif-placeholder { height: 220px; }
 }
 
@@ -217,6 +217,10 @@ img.footer-wordmark { width: auto; height: 32px; aspect-ratio: 107 / 16; }
   .hero-pagination { right: var(--space-9); bottom: var(--space-8); }
   .hero-dots button { width: 12px; }
   .hero-dots button.active { width: 24px; }
-  .masonry { columns: 1; }
+  .masonry { grid-template-columns: minmax(0, 1fr); }
   .masonry .masonry-card .gif-placeholder { height: 176px; }
 }
+
+
+
+

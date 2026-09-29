@@ -25,6 +25,7 @@ export type SpriteSheet = {
   frameHeight: number
   /** Full loop length in ms, from the pack's per-frame durations. */
   duration: number
+  durations?: number[]
 }
 
 export function frameSrc(sheet: SpriteSheet, frame: number): string {
@@ -65,9 +66,17 @@ export function PetSpriteStrip({ sheet, zoom = 2, className }: {
     preloadSheet(sheet)
     setFrame(0)
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
-    const step = Math.max(16, Math.round(sheet.duration / sheet.frames))
-    const timer = setInterval(() => setFrame((value) => (value + 1) % sheet.frames), step)
-    return () => clearInterval(timer)
+    let current = 0
+    let timer: ReturnType<typeof setTimeout>
+    const advance = () => {
+      timer = setTimeout(() => {
+        current = (current + 1) % sheet.frames
+        setFrame(current)
+        advance()
+      }, Math.max(16, sheet.durations?.[current] ?? Math.round(sheet.duration / sheet.frames)))
+    }
+    advance()
+    return () => clearTimeout(timer)
   }, [sheet])
 
   const style = {

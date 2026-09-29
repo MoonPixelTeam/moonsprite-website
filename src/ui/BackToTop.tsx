@@ -29,7 +29,8 @@ export function BackToTop({ label, routeKey, supportLabel, topLabel }: { label: 
     }
   }
   return <div className="back-to-top">
-    <Button className="floating-tool" href="#/support" ariaLabel={supportLabel}>{supportLabel}</Button>
+    {import.meta.env.DEV && <Button className="floating-tool" href="#/support" ariaLabel={supportLabel}>{supportLabel}</Button>}
     {visible && <Button className="floating-tool" onClick={back} ariaLabel={label} icon={<PixelArrowLeft className="back-to-top-arrow" />}>{topLabel}</Button>}
   </div>
 }
+

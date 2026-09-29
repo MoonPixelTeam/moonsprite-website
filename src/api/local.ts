@@ -1,3 +1,4 @@
+import { readStudioUnlocked } from './prototypeSession'
 import { MARKET_PRODUCTS } from '../market/catalog'
 import { clearLocalAdmin, currentLocalAccountId, isLocalAdmin, requireLocalAdmin } from './permissions'
 import type { Account, ApiClient, ApiResult, AuthResult, Ledger, Order, OrderLine, PublishInput, SaleLine, StudioProduct, Withdrawal } from './types'
@@ -404,30 +405,4 @@ export const localAdapter: ApiClient = {
 
 /** The studio gate is a prototype passphrase, kept here so it can be swapped for a
  *  server-side creator check in one place. */
-export const STUDIO_PASSPHRASE = 'studio'
-
-export function readStudioUnlocked(accountId?: string): boolean {
-  try {
-    const raw = localStorage.getItem(STUDIO_SESSION)
-    if (!raw) return false
-    if (raw === '1') return false
-    const session = JSON.parse(raw) as { accountId?: string }
-    return Boolean(accountId && session.accountId === accountId)
-  } catch {
-    return false
-  }
-}
-
-export function writeStudioUnlocked(value: boolean, accountId?: string): void {
-  try {
-    if (value && accountId) localStorage.setItem(STUDIO_SESSION, JSON.stringify({ accountId }))
-    else localStorage.removeItem(STUDIO_SESSION)
-  } catch (error) {
-    console.warn('MoonSprite api: could not persist the studio session.', error)
-  }
-}
-
-/** Orders changed somewhere in this tab. */
-export function notifyOrdersChanged(): void {
-  window.dispatchEvent(new Event('moonsprite:data'))
-}
+export { STUDIO_PASSPHRASE, readStudioUnlocked, writeStudioUnlocked, notifyOrdersChanged } from './prototypeSession'

@@ -15,7 +15,7 @@ const faqPage: Record<Language, FaqContent> = {
         id: 'faq-start',
         title: '开始使用',
         items: [
-          { id: 'faq-download', q: '现在可以下载 MoonSprite 吗？', a: 'MoonSprite 目前处于 Beta 开发阶段，尚未公开分发。Steam 商店页面准备好后，官网会开放愿望单入口，并同步公布发布渠道与授权方式。' },
+          { id: 'faq-download', q: '现在可以下载 MoonSprite 吗？', a: 'MoonSprite 已登陆 Steam。点击官网的 Steam 按钮前往查看，具体价格、下载与安装信息以 Steam 页面为准。' },
           { id: 'faq-system', q: '支持哪些系统？', a: '当前产品面向 Windows 10 与 Windows 11，需要 WebView2 Runtime（安装包会自动处理）。其他桌面平台不在首版范围内。' },
           { id: 'faq-portable', q: '有便携版吗？', a: '有。发布后会同时提供 NSIS 安装包与便携版：便携版解压到任意目录即可运行，gallery、exports、brushes、palettes、scripts 等用户目录就在程序旁边，方便整体备份与迁移。' },
           { id: 'faq-languages', q: '界面支持哪些语言？', a: '当前支持简体中文、英语、日语、韩语、西班牙语、法语、德语、巴西葡萄牙语和俄语。菜单与下拉项会随文字扩宽，空间不足时省略并在悬停时显示完整文字。' },
@@ -187,7 +187,7 @@ const faqPage: Record<Language, FaqContent> = {
         id: 'faq-start',
         title: 'Getting started',
         items: [
-          { id: 'faq-download', q: 'Can I download MoonSprite now?', a: 'MoonSprite is in Beta and not publicly distributed yet. When the Steam store page is ready, this site will open its wishlist link and publish the release channels and licensing at the same time.' },
+          { id: 'faq-download', q: 'Can I download MoonSprite now?', a: 'MoonSprite is available on Steam. Use the Steam button on this site to find it; see Steam for pricing, downloads, and installation information.' },
           { id: 'faq-system', q: 'Which platforms are supported?', a: 'The current product targets Windows 10 and Windows 11 and needs the WebView2 Runtime (the installer handles it). Other desktop platforms are not part of the first release.' },
           { id: 'faq-portable', q: 'Is there a portable build?', a: 'Yes. After release there will be both an NSIS installer and a portable build; the portable version runs from any directory, with the user folders (gallery, exports, brushes, palettes, scripts, and more) next to the program, which makes backup and migration simple.' },
           { id: 'faq-languages', q: 'Which interface languages are available?', a: 'Simplified Chinese, English, Japanese, Korean, Spanish, French, German, Brazilian Portuguese, and Russian. Menus and dropdowns widen with the text and ellipsize when space runs out, showing the full label on hover.' },

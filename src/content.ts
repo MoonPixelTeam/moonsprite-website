@@ -16,8 +16,15 @@ interface BlogSection { id: string; heading: string; paragraphs: string[] }
 interface BlogPost { id: string; date: string; title: string; excerpt: string; sections: BlogSection[] }
 export interface BlogContent { title: string; subtitle: string; backToList: string; readMore: string; posts: BlogPost[] }
 interface FooterColumn { title: string; items: { key: string; label: string }[] }
-interface FeatureGif { src: string; title: string }
-interface FeatureCard { title: string; body: string; icon: string; gifs?: FeatureGif[] }
+/** A homepage feature demo. The files follow one naming convention, so content only carries the
+ *  slug; scripts/encode-feature-media.mjs produces the matching set from the source GIFs. */
+export interface FeatureMedia { slug: string; title: string }
+export const featurePoster = (media: FeatureMedia) => `/assets/features/${media.slug}-poster.webp`
+/** ~800w clip for the masonry card. */
+export const featureThumb = (media: FeatureMedia) => `/assets/features/${media.slug}-thumb.mp4`
+/** ~1920w clip for the zoom preview, fetched only when a visitor opens one. */
+export const featureFull = (media: FeatureMedia) => `/assets/features/${media.slug}-full.mp4`
+interface FeatureCard { title: string; body: string; icon: string; media?: FeatureMedia[] }
 export interface MarketContent {
   title: string
   subtitle: string
@@ -574,7 +581,7 @@ export const copy: Record<Language, Copy> = {
       backHome: '返回首页',
       features: { account: '账户', cart: '购物车', market: '市场', competitions: '比赛' },
     },
-    common: { dev: 'Beta 开发中', steam: '在 Steam 加入愿望单', steamSoon: '即将登陆 Steam', github: '查看 GitHub', themeToLight: '切换到白天模式', themeToDark: '切换到黑夜模式' },
+    common: { dev: '现已登陆 Steam', steam: '前往 Steam 商店', steamSoon: '前往 Steam 商店', github: '查看 GitHub', themeToLight: '切换到白天模式', themeToDark: '切换到黑夜模式' },
     chrome: { docLabel: '未命名工程' },
     hero: {
       title: 'MoonSprite',
@@ -590,25 +597,27 @@ export const copy: Record<Language, Copy> = {
     work: { eyebrow: 'GALLERY', title: '作品展示', description: '来自比赛作品展的精选画作，探索不同尺度、色彩与构图下的像素世界。', itemAlt: ['月面基地：蓝色地球下的月球观测站', '绿崖彗星：划过绿色山崖的彗星', '山丘城堡：绿色山丘上的白色城堡', '月光林道：月光下的森林小径', '云中红塔：云海之间的红色高塔', '草原雷暴：草原上空的闪电风暴'] },
     features: {
       eyebrow: 'FEATURES',
-      title: '功能概览',
-      description: '绘制、变换、配色与逐帧动画，在一个工作台里完成。点击预览查看细节，更多操作方式见文档。',
+      title: '特色功能',
+      description: '从逐帧蒙版到自动补间，探索让像素创作更顺手的特色工具。',
       items: [
-        { icon: 'mask', title: '逐帧蒙版', body: '用黑白灰控制显示范围，保留原始像素；每一帧都能拥有独立蒙版，图层组也可整体套用。', gifs: [{ src: '/assets/features/per-frame-layer-mask.gif', title: '逐帧图层蒙版' }] },
+        { icon: 'mask', title: '逐帧蒙版', body: '用黑白灰控制显示范围，保留原始像素；每一帧都能拥有独立蒙版，图层组也可整体套用。', media: [{ slug: 'per-frame-layer-mask', title: '逐帧图层蒙版' }] },
         { icon: 'editable-text', title: '可编辑文本图层', body: '文字内容、字体与排版持续保留，固定文本框自动换行，之后仍可回到文本层修改。' },
         { icon: 'layer-styles', title: '实时图层样式', body: '描边、阴影、内发光、颜色与渐变叠加随原图实时更新，也可以按帧计算或转换为普通像素。' },
-        { icon: 'tween', title: '自动补间动画', body: '根据起点和终点自动生成位移、旋转、缩放与透明度的过渡帧，减少重复绘制。', gifs: [{ src: '/assets/features/tween-single-frame.gif', title: '补间动画1【单帧】' }, { src: '/assets/features/tween-deformation.gif', title: '补间动画2【形变补间】' }, { src: '/assets/features/tween-loop.gif', title: '补间动画3【循环节】' }] },
+        { icon: 'tween', title: '自动补间动画', body: '根据起点和终点自动生成位移、旋转、缩放与透明度的过渡帧，减少重复绘制。', media: [{ slug: 'tween-single-frame', title: '补间动画1【单帧】' }, { slug: 'tween-deformation', title: '补间动画2【形变补间】' }, { slug: 'tween-loop', title: '补间动画3【循环节】' }] },
         { icon: 'free-tile', title: '自由瓦片', body: '可复用图案能够任意位置摆放并互相重叠；修改源图后，所有引用实例同步更新。' },
         { icon: 'linked-content', title: '跨图层关联内容', body: '多个图层共享同一份像素内容，同时保留各自的位置、显隐、不透明度与显示效果。' },
         { icon: 'seamless-tiling', title: '可编辑无缝平铺', body: '支持 3×3、X 轴和 Y 轴平铺预览，还能直接在相邻副本上绘画，结果映射回原画布。' },
         { icon: 'smart-fill', title: '智能闭合与纹理填充', body: '线稿存在小缺口时仍可限制填充范围，并支持裂纹、木纹、颗粒等程序纹理。' },
-        { icon: 'pattern-brush', title: '图案笔刷', body: '从图片或选区创建笔刷，保留颜色与透明度，支持沿路径盖章以及按来源或目标对齐平铺。', gifs: [{ src: '/assets/features/pattern-brush.gif', title: '图案笔刷1（图案笔刷）' }, { src: '/assets/features/temporary-brush.gif', title: '图案笔刷2（临时笔刷）' }] },
-        { icon: 'liquify', title: '液化工具', body: '推动、膨胀、收缩与扭转用于整理像素轮廓，可先框选以限制作用范围。', gifs: [{ src: '/assets/features/liquify.gif', title: '液化' }] },
-        { icon: 'iso-guide', title: 'ISO 绘制辅助', body: '将线条约束到等距阶梯方向，帮助快速绘制稳定的等距像素结构。', gifs: [{ src: '/assets/features/iso-drawing-guide.gif', title: 'ISO绘制辅助' }] },
+        { icon: 'pattern-brush', title: '图案笔刷', body: '从图片或选区创建笔刷，保留颜色与透明度，支持沿路径盖章以及按来源或目标对齐平铺。', media: [{ slug: 'pattern-brush', title: '图案笔刷1（图案笔刷）' }, { slug: 'temporary-brush', title: '图案笔刷2（临时笔刷）' }] },
+        { icon: 'liquify', title: '液化工具', body: '推动、膨胀、收缩与扭转用于整理像素轮廓，可先框选以限制作用范围。', media: [{ slug: 'liquify', title: '液化' }] },
+        { icon: 'iso-guide', title: 'ISO 绘制辅助', body: '将线条约束到等距阶梯方向，帮助快速绘制稳定的等距像素结构。', media: [{ slug: 'iso-drawing-guide', title: 'ISO绘制辅助' }] },
         { icon: 'smooth-brush', title: '平滑笔刷', body: '沿区域涂抹整理已有像素边缘，适合局部修整轮廓并即时对比修改前后的结果。' },
-        { icon: 'antialias', title: '自动抗锯齿', body: '根据轮廓生成过渡像素，可选择颜色来源、不透明度与内部颜色边界，确认后一步撤销。', gifs: [{ src: '/assets/features/automatic-antialiasing.gif', title: '自动抗锯齿' }] },
+        { icon: 'antialias', title: '自动抗锯齿', body: '根据轮廓生成过渡像素，可选择颜色来源、不透明度与内部颜色边界，确认后一步撤销。', media: [{ slug: 'automatic-antialiasing', title: '自动抗锯齿' }] },
+        { icon: 'frame-animation', title: '逐帧动画', body: '在时间轴中管理帧与图层，调整帧时长、播放方向和循环次数，预览动画节奏。' },
+        { icon: 'sprite-export', title: '精灵表导出', body: '将动画帧导出为精灵表，设置排列方向与列数，合并重复帧并忽略空帧，方便交付游戏项目。' },
         { icon: 'filters', title: '滤镜', body: '通过可撤销的图像调整快速处理颜色与画面效果，保留原始工程结构以便继续编辑。' },
         { icon: 'multi-transform', title: '多图层多帧变换', body: '同时选择多个图层、图层组与帧，统一移动、缩放、旋转或翻转，并保留原有结构。' },
-        { icon: 'timelapse', title: '缩时记录与导出', body: '自动保留绘画过程，可导出 MP4、WebM 或图片序列，也能随工程一起携带。', gifs: [{ src: '/assets/features/timelapse-recording.gif', title: '缩时动画与导出' }] },
+        { icon: 'timelapse', title: '缩时记录与导出', body: '自动保留绘画过程，可导出 MP4、WebM 或图片序列，也能随工程一起携带。', media: [{ slug: 'timelapse-recording', title: '缩时动画与导出' }] },
       ],
     },
     marketTeaser: {
@@ -768,7 +777,7 @@ export const copy: Record<Language, Copy> = {
       colQty: '数量',
       colGross: '金额',
     },
-    cta: { eyebrow: '下一帧，即将开始', title: '关注 MoonSprite 的开发进度。', body: 'Steam 页面开放后即可加入愿望单。现在可以先在 GitHub 查看源代码、版本进展与已知问题。' },
+    cta: { eyebrow: '现已登陆 Steam', title: '用 MoonSprite，开始下一幅作品。', body: '前往 Steam 查看 MoonSprite，也可以在 GitHub 了解源代码、版本更新与已知问题。' },
     footer: {
       tagline: '原创源码可见的 Windows 像素画工作台。',
       columns: {
@@ -784,7 +793,7 @@ export const copy: Record<Language, Copy> = {
             { key: 'github', label: 'GitHub 仓库' },
             { key: 'issues', label: '问题反馈' },
             { key: 'discussions', label: '功能讨论' },
-            { key: 'steam', label: 'Steam 社区' },
+            { key: 'steam', label: '在 Steam 查看' },
           ],
         },
         follow: {
@@ -924,7 +933,7 @@ export const copy: Record<Language, Copy> = {
       backHome: 'Back to home',
       features: { account: 'Account', cart: 'Cart', market: 'Market', competitions: 'Competitions' },
     },
-    common: { dev: 'Beta in development', steam: 'Wishlist on Steam', steamSoon: 'Coming soon to Steam', github: 'View on GitHub', themeToLight: 'Switch to light mode', themeToDark: 'Switch to dark mode' },
+    common: { dev: 'Available on Steam', steam: 'View on Steam', steamSoon: 'View on Steam', github: 'View on GitHub', themeToLight: 'Switch to light mode', themeToDark: 'Switch to dark mode' },
     chrome: { docLabel: 'Untitled project' },
     hero: {
       title: 'MoonSprite',
@@ -940,25 +949,27 @@ export const copy: Record<Language, Copy> = {
     work: { eyebrow: 'Gallery', title: 'From tiny icons to complete worlds.', description: 'Selected works from the competition exhibition. Explore pixel worlds through different scales, palettes and compositions.', itemAlt: ['Lunar base: a moon observatory under a blue Earth', 'Green cliffs: a comet streaking past mossy cliffs', 'Hilltop castle: a white castle on a green hill', 'Moonlit path: a forest trail under the moon', 'Tower in the clouds: a red tower among storm clouds', 'Prairie storm: lightning over a grassland'] },
     features: {
       eyebrow: 'FEATURES',
-      title: 'Features',
-      description: 'Draw, transform, color and animate in one workspace. Open a preview for a closer look, or explore the documentation.',
+      title: 'Standout features',
+      description: 'From per-frame masks to automatic tweening, explore tools that make pixel creation feel effortless.',
       items: [
-        { icon: 'mask', title: 'Per-frame masks', body: 'Control visibility with black, white, and gray while preserving source pixels; each frame can have its own mask, including group masks.', gifs: [{ src: '/assets/features/per-frame-layer-mask.gif', title: '逐帧图层蒙版' }] },
+        { icon: 'mask', title: 'Per-frame masks', body: 'Control visibility with black, white, and gray while preserving source pixels; each frame can have its own mask, including group masks.', media: [{ slug: 'per-frame-layer-mask', title: '逐帧图层蒙版' }] },
         { icon: 'editable-text', title: 'Editable text layers', body: 'Keep text, font, and layout editable; fixed text boxes wrap automatically and can be revised later.' },
         { icon: 'layer-styles', title: 'Live layer styles', body: 'Strokes, shadows, inner glow, color, and gradient overlays update with the source and can be baked into pixels when needed.' },
-        { icon: 'tween', title: 'Automatic tweening', body: 'Generate in-between frames from start and end states for position, rotation, scale, and opacity.', gifs: [{ src: '/assets/features/tween-single-frame.gif', title: '补间动画1【单帧】' }, { src: '/assets/features/tween-deformation.gif', title: '补间动画2【形变补间】' }, { src: '/assets/features/tween-loop.gif', title: '补间动画3【循环节】' }] },
+        { icon: 'tween', title: 'Automatic tweening', body: 'Generate in-between frames from start and end states for position, rotation, scale, and opacity.', media: [{ slug: 'tween-single-frame', title: '补间动画1【单帧】' }, { slug: 'tween-deformation', title: '补间动画2【形变补间】' }, { slug: 'tween-loop', title: '补间动画3【循环节】' }] },
         { icon: 'free-tile', title: 'Free tiles', body: 'Place reusable patterns anywhere, let instances overlap, and update every reference by editing the source.' },
         { icon: 'linked-content', title: 'Linked content across layers', body: 'Share one pixel drawing across multiple layers while keeping independent position, visibility, opacity, and effects.' },
         { icon: 'seamless-tiling', title: 'Editable seamless tiling', body: 'Preview 3×3, X-axis, or Y-axis repeats and paint directly on neighboring copies with changes mapped back to the source.' },
         { icon: 'smart-fill', title: 'Smart close and texture fill', body: 'Contain fills across small line gaps and choose procedural textures such as cracks, wood grain, and particles.' },
-        { icon: 'pattern-brush', title: 'Pattern brushes', body: 'Create brushes from images or selections, preserve color and alpha, and stamp or tile them by source or target alignment.', gifs: [{ src: '/assets/features/pattern-brush.gif', title: '图案笔刷1（图案笔刷）' }, { src: '/assets/features/temporary-brush.gif', title: '图案笔刷2（临时笔刷）' }] },
-        { icon: 'liquify', title: 'Liquify tool', body: 'Push, inflate, shrink, and twist contours while using a selection to limit the affected area.', gifs: [{ src: '/assets/features/liquify.gif', title: '液化' }] },
-        { icon: 'iso-guide', title: 'ISO drawing guides', body: 'Constrain lines to consistent isometric steps for faster, cleaner isometric pixel structures.', gifs: [{ src: '/assets/features/iso-drawing-guide.gif', title: 'ISO绘制辅助' }] },
+        { icon: 'pattern-brush', title: 'Pattern brushes', body: 'Create brushes from images or selections, preserve color and alpha, and stamp or tile them by source or target alignment.', media: [{ slug: 'pattern-brush', title: '图案笔刷1（图案笔刷）' }, { slug: 'temporary-brush', title: '图案笔刷2（临时笔刷）' }] },
+        { icon: 'liquify', title: 'Liquify tool', body: 'Push, inflate, shrink, and twist contours while using a selection to limit the affected area.', media: [{ slug: 'liquify', title: '液化' }] },
+        { icon: 'iso-guide', title: 'ISO drawing guides', body: 'Constrain lines to consistent isometric steps for faster, cleaner isometric pixel structures.', media: [{ slug: 'iso-drawing-guide', title: 'ISO绘制辅助' }] },
         { icon: 'smooth-brush', title: 'Smooth brush', body: 'Refine existing pixel edges locally and compare the result while you work.' },
-        { icon: 'antialias', title: 'Automatic antialiasing', body: 'Generate transition pixels from outlines with control over color sources, opacity, and internal boundaries.', gifs: [{ src: '/assets/features/automatic-antialiasing.gif', title: '自动抗锯齿' }] },
+        { icon: 'antialias', title: 'Automatic antialiasing', body: 'Generate transition pixels from outlines with control over color sources, opacity, and internal boundaries.', media: [{ slug: 'automatic-antialiasing', title: '自动抗锯齿' }] },
+        { icon: 'frame-animation', title: 'Frame animation', body: 'Manage frames and layers in the timeline, adjust frame durations, playback direction and repeat counts, and preview the timing.' },
+        { icon: 'sprite-export', title: 'Sprite sheet export', body: 'Export animation frames as sprite sheets with layout and column controls, duplicate merging and empty-frame skipping for game projects.' },
         { icon: 'filters', title: 'Filters', body: 'Apply reversible image adjustments for color and visual effects while keeping the editable project structure.' },
         { icon: 'multi-transform', title: 'Multi-layer, multi-frame transforms', body: 'Transform several layers, groups, and frames together while preserving their original structure.' },
-        { icon: 'timelapse', title: 'Timelapse recording and export', body: 'Keep the drawing process and export it as MP4, WebM, or an image sequence, with an option to carry it in the project.', gifs: [{ src: '/assets/features/timelapse-recording.gif', title: '缩时动画与导出' }] },
+        { icon: 'timelapse', title: 'Timelapse recording and export', body: 'Keep the drawing process and export it as MP4, WebM, or an image sequence, with an option to carry it in the project.', media: [{ slug: 'timelapse-recording', title: '缩时动画与导出' }] },
       ],
     },
     marketTeaser: {
@@ -1118,7 +1129,7 @@ export const copy: Record<Language, Copy> = {
       colQty: 'Qty',
       colGross: 'Amount',
     },
-    cta: { eyebrow: 'The next frame is coming', title: 'Follow MoonSprite as it develops.', body: 'Wishlist on Steam when the store page goes live. For now, visit GitHub for source code, version progress, and known issues.' },
+    cta: { eyebrow: 'Available on Steam', title: 'Start your next creation with MoonSprite.', body: 'Find MoonSprite on Steam, or visit GitHub for source code, updates, and known issues.' },
     footer: {
       tagline: 'An original source-available pixel art workstation for Windows.',
       columns: {
@@ -1134,7 +1145,7 @@ export const copy: Record<Language, Copy> = {
             { key: 'github', label: 'GitHub repository' },
             { key: 'issues', label: 'Report issues' },
             { key: 'discussions', label: 'Feature discussions' },
-            { key: 'steam', label: 'Steam community' },
+            { key: 'steam', label: 'View on Steam' },
           ],
         },
         follow: {
@@ -1265,3 +1276,4 @@ export const copy: Record<Language, Copy> = {
     },
   },
 }
+

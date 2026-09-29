@@ -9,6 +9,7 @@ import { useAccount } from '../account/store'
 import type { Order } from '../account/store'
 import { Button, Panel, Alert } from '../ui'
 import { OrderList } from '../account/OrderList'
+import { request } from '../api/transport'
 
 /**
  * One order in full: what was bought, what it cost, the licence it was sold under, and
@@ -20,6 +21,8 @@ export function OrderPage({ t, language, orderId }: { t: Copy; language: Languag
   const orderStrings = t.marketPage.orders
   const { orders } = useAccount()
   const order = orderId ? orders.find((item) => item.id === orderId) : undefined
+  const [checking, setChecking] = useState(false)
+  const [checkMessage, setCheckMessage] = useState('')
 
   if (!order) {
     return <WorkspacePage
@@ -36,6 +39,22 @@ export function OrderPage({ t, language, orderId }: { t: Copy; language: Languag
           </Panel>
   </WorkspacePage>
   }
+
+  if (order.status === 'pending') return <WorkspacePage title={language === 'zh' ? '等待付款确认' : 'Awaiting payment confirmation'} back="#/purchases" backLabel={orderStrings.back}>
+    <OrderSummary order={order} t={t} language={language} />
+    <Panel><p>{language === 'zh' ? '支付确认后即可下载。如果已完成付款，请刷新订单；请勿重复付款。' : 'Downloads unlock after payment confirmation. If you have paid, refresh this order; do not pay again.'}</p>
+      {order.paymentUrl && <Button variant="primary" href={order.paymentUrl}>{language === 'zh' ? '继续付款' : 'Continue payment'}</Button>}
+      <Button disabled={checking} onClick={async () => {
+        setChecking(true); setCheckMessage('')
+        try {
+          const result = await request<Order>(`/orders/${encodeURIComponent(order.id)}/reconcile`, { method: 'POST' })
+          window.dispatchEvent(new Event('moonsprite:data'))
+          if (result.status === 'pending') setCheckMessage(language === 'zh' ? '支付平台尚未确认付款，请稍后再查询。' : 'Payment is not yet confirmed. Check again later.')
+        } catch { setCheckMessage(language === 'zh' ? '暂时无法查询支付平台，请稍后再试或联系支持。' : 'Unable to query the payment provider. Try later or contact support.') }
+        finally { setChecking(false) }
+      }}>{checking ? (language === 'zh' ? '查询中…' : 'Checking…') : language === 'zh' ? '向支付平台查询付款状态' : 'Check with payment provider'}</Button>
+      {checkMessage && <p role="status">{checkMessage}</p>}
+    </Panel></WorkspacePage>
 
   return <WorkspacePage
           eyebrow={strings.eyebrow}
@@ -74,7 +93,7 @@ export function ReceiptPage({ t, language }: { t: Copy; language: Language }) {
   const { products } = useCatalogue()
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
-  const order: Order | undefined = orders[0]
+  const order: Order | undefined = orders.find(order => order.status !== 'pending')
 
   const downloadAll = async () => {
     if (!order) return
@@ -127,7 +146,8 @@ function OrderSummary({ order, t, language }: { order: Order; t: Copy; language:
   return <Panel title={language === 'zh' ? '订单摘要' : 'Order summary'}><dl className="workspace-facts">
     <div><dt>{language === 'zh' ? '订单编号' : 'Order number'}</dt><dd>{order.id}</dd></div>
     <div><dt>{t.marketPage.orders.date}</dt><dd>{new Date(order.createdAt).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US')}</dd></div>
-    <div><dt>{language === 'zh' ? '订单状态' : 'Status'}</dt><dd className="purchase-status">{t.marketPage.orders.statusPaid}</dd></div>
+    <div><dt>{language === 'zh' ? '订单状态' : 'Status'}</dt><dd className="purchase-status">{order.status === 'pending' ? (language === 'zh' ? '待付款' : 'Awaiting payment') : t.marketPage.orders.statusPaid}</dd></div>
+    {order.paymentCny !== undefined && <div><dt>{language === 'zh' ? '收银台金额' : 'Checkout amount'}</dt><dd>¥{order.paymentCny.toFixed(2)} CNY</dd></div>}
     <div><dt>{t.marketPage.checkout.total}</dt><dd>{formatPrice(order.total, language)}</dd></div>
   </dl></Panel>
 }

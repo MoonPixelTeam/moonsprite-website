@@ -8,12 +8,16 @@ import type { PackAnimations } from '../market/catalog'
  * adapter, not a rewrite.
  */
 
-export type Account = { id: string; name: string; email: string; createdAt: number; emailVerified: boolean }
+export type Account = { roles?: ('buyer' | 'creator' | 'admin')[]; id: string; name: string; email: string; createdAt: number; emailVerified: boolean }
 export type OrderLine = { platformFeePercent?: number; id: string; name: string; price: number; quantity: number }
-export type Order = { id: string; createdAt: number; total: number; lines: OrderLine[] }
+export type Order = { id: string; createdAt: number; total: number; lines: OrderLine[]; status?: 'pending' | 'paid'; paymentUrl?: string; paymentCny?: number }
 export type AuthResult = { ok: true; account: Account } | { ok: false; error: string }
 
 export type StudioProduct = {
+  soldCount?: number
+  cartCount?: number
+  compatibleVersion?: string
+  download?: string
   sellerId?: string
   archived?: boolean
   updatedAt?: number
@@ -70,7 +74,7 @@ export type Ledger = {
   withdrawals: Withdrawal[]
 }
 
-export type PublishInput = Omit<StudioProduct, 'id' | 'publishedAt'>
+export type PublishInput = Omit<StudioProduct, 'id' | 'publishedAt' | 'sellerId' | 'soldCount' | 'cartCount' | 'download'>
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: string }
 
@@ -96,7 +100,7 @@ export type ApiClient = {
     /** Orders for the signed-in account. */
     list(): Promise<Order[]>
     /** Records a purchase and returns the stored order. */
-    create(lines: OrderLine[]): Promise<ApiResult<Order>>
+    create(lines: OrderLine[], paymentType?: 'alipay' | 'wxpay'): Promise<ApiResult<Order>>
     /** Every order in the ledger; the studio needs the whole book. */
     all(): Promise<Order[]>
   }

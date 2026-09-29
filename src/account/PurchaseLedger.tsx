@@ -19,7 +19,7 @@ export function PurchaseLedger({ orders, t, language }: { orders: Order[]; t: Co
         <span className="purchase-register-product"><strong>{names[0] ?? (zh ? '购买订单' : 'Purchase')}{names.length > 1 && (zh ? ` 等 ${names.length} 件作品` : ` + ${names.length - 1} more`)}</strong><small>{order.id}</small></span>
         <time dateTime={new Date(order.createdAt).toISOString()}>{new Date(order.createdAt).toLocaleDateString(zh ? 'zh-CN' : 'en-US')}</time>
         <span className="purchase-register-amount">{formatPrice(order.total, language)}</span>
-        <span className="purchase-status"><StatusBadge tone="success">{t.marketPage.orders.statusPaid}</StatusBadge></span>
+        <span className="purchase-status"><StatusBadge tone={order.status === 'pending' ? 'warning' : 'success'}>{order.status === 'pending' ? (zh ? '待付款' : 'Awaiting payment') : t.marketPage.orders.statusPaid}</StatusBadge></span>
         <Button size="compact" href={`#/orders/${order.id}`} ariaLabel={`${zh ? '订单详情与下载' : 'Details and downloads'} ${order.id}`}>{zh ? '详情与下载' : 'Details & downloads'}</Button>
       </div>
     })}

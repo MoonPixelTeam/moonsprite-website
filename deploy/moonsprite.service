@@ -1,0 +1,18 @@
+[Unit]
+Description=MoonSprite website and API
+After=network.target
+
+[Service]
+Type=simple
+User=moonsprite
+WorkingDirectory=/opt/moonsprite-website
+EnvironmentFile=/etc/moonsprite/moonsprite.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server/index.mjs
+Restart=on-failure
+RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

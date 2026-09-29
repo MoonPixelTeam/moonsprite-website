@@ -6,7 +6,7 @@ import { Alert, Button, Field, LoadingState } from '../ui'
 import { SITE_CONFIG } from '../config'
 
 export function AuthPage({ t, language, mode, returnTo }: { t: Copy; language: Language; mode: 'login' | 'register'; returnTo?: string }) {
-  const { account, ready, register, signIn } = useAccount()
+  const { account, ready, register, signIn, requestPasswordReset } = useAccount()
   const s = t.accountPage
   const registering = mode === 'register'
   const destination = safeReturnTo(returnTo)
@@ -15,6 +15,7 @@ export function AuthPage({ t, language, mode, returnTo }: { t: Copy; language: L
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [resetNotice, setResetNotice] = useState('')
   useEffect(() => { if (ready && account) navigate(destination) }, [ready, account, destination])
   if (!ready || account) return <main id="main"><LoadingState label={s.working} /></main>
   const errors: Record<string, string> = { name: s.errorName, email: s.errorEmail, password: s.errorPassword, exists: s.errorExists }
@@ -39,6 +40,12 @@ export function AuthPage({ t, language, mode, returnTo }: { t: Copy; language: L
         {error && <Alert tone="danger" role="alert">{error}</Alert>}
         <Button type="submit" variant="primary" block disabled={busy}>{busy ? s.working : registering ? s.createAccount : s.signIn}</Button>
       </form>
+      {!registering && <><Button disabled={busy || !email} onClick={async () => {
+        setBusy(true); setResetNotice('')
+        try { await requestPasswordReset(email); setResetNotice(language === 'zh' ? '如果该邮箱已注册，你将收到密码重置邮件。' : 'If this address is registered, you will receive a password reset email.') }
+        catch { setResetNotice(language === 'zh' ? '暂时无法发送，请稍后重试。' : 'Unable to send. Please try later.') }
+        finally { setBusy(false) }
+      }}>{language === 'zh' ? '忘记密码？向上方邮箱发送重置邮件' : 'Forgot password? Send a reset email'}</Button>{resetNotice && <p role="status">{resetNotice}</p>}</>}
       <p className="auth-switch">{language === 'zh' ? (registering ? '已有账户？' : '还没有账户？') : (registering ? 'Already have an account?' : 'New to MoonSprite?')} <a href={authHash(registering ? 'login' : 'register', destination)}>{registering ? s.signIn : s.createAccount}</a></p>
       {!SITE_CONFIG.apiBaseUrl && <p className="auth-note">{s.prototypeBody}</p>}
       <a className="auth-back" href="#/market">{t.marketPage.detail.back}</a>

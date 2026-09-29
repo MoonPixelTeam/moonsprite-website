@@ -6,8 +6,9 @@ import { LoadingState } from '../ui'
 import type { Copy, Language } from '../content'
 import type { Route } from '../router'
 import { Home } from '../pages/Home'
-import { MarketPage, PackDetailPage } from '../pages/Market'
-import { UiPage } from '../pages/Ui'
+const MarketPage = lazy(() => import('../pages/Market').then(module => ({ default: module.MarketPage })))
+const PackDetailPage = lazy(() => import('../pages/Market').then(module => ({ default: module.PackDetailPage })))
+const UiPage = lazy(() => import('../pages/Ui').then(module => ({ default: module.UiPage })))
 import { LicensePage } from '../pages/License'
 import { PrivacyPage } from '../pages/Privacy'
 import { UnavailablePage } from '../pages/Unavailable'
@@ -31,13 +32,13 @@ export function RouteOutlet({ route, t, language }: { route: Route; t: Copy; lan
     <WorkspaceRoutes route={route} t={t} language={language} />
     {route.page === 'competitions' && <CompetitionsPage language={language} />}
     {route.page === 'home' && <Home t={t} language={language} />}
-    {route.page === 'market' && (route.subId ? <PackDetailPage t={t} language={language} productId={route.subId} /> : <MarketPage t={t} language={language} />)}
     <Suspense fallback={<main id="main" className="route-loading" aria-busy="true"><LoadingState label={language === 'zh' ? '正在载入内容…' : 'Loading content…'} /></main>}>
+    {route.page === 'market' && (route.subId ? <PackDetailPage t={t} language={language} productId={route.subId} /> : <MarketPage t={t} language={language} />)}
+    {route.page === 'ui' && <UiPage t={t} language={language} />}
       {route.page === 'docs' && <main id="main"><DocsPage t={t} language={language} subId={route.subId} /></main>}
       {route.page === 'faq' && <main id="main"><FaqPage t={t} language={language} subId={route.subId} /></main>}
       {route.page === 'blog' && <main id="main"><BlogPage t={t} language={language} subId={route.subId} /></main>}
     </Suspense>
-    {route.page === 'ui' && <UiPage t={t} language={language} />}
     {route.page === 'privacy' && <PrivacyPage t={t} language={language} />}
     {route.page === 'license' && <LicensePage t={t} language={language} />}
   </>

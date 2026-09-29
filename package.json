@@ -4,16 +4,25 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
+    "dev:frontend": "vite",
+    "server": "node --env-file-if-exists=.env server/index.mjs",
+    "start": "node --env-file-if-exists=.env server/index.mjs",
+    "manage": "node --env-file-if-exists=.env server/manage.mjs",
+    "seed:catalogue": "node scripts/seed-catalogue.mjs",
+    "test:backend": "node --test scripts/backend.test.mjs",
+    "test:browser": "node scripts/backend-smoke.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "check:classes": "node scripts/check-classes.mjs",
     "check:icons": "node scripts/check-icons.mjs",
     "check": "tsc --noEmit && node scripts/check-classes.mjs && node scripts/check-icons.mjs",
-    "test": "node --test scripts/*.test.mjs",
+    "test": "node scripts/test.mjs",
     "capture:product": "node scripts/capture-product.mjs"
   },
+  "engines": { "node": ">=24.0.0" },
   "dependencies": {
+    "nodemailer": "^10.0.12",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

@@ -22,7 +22,7 @@ const blog: Record<Language, BlogContent> = {
           { id: 'why-start', heading: '起点', paragraphs: ['像素画的工具链并不缺选择，但要在 Windows 上获得一个清晰、快速、界面可定制，并且不把简单操作复杂化的工作台，选择会突然变少。MoonSprite 的起点很具体：把我们自己在做游戏素材时反复缺的那几件工具补齐。'] },
           { id: 'why-tools', heading: '先补齐三件事', paragraphs: ['第一是自由瓦片：树木、石块、角色零件这类重复元素不该被网格限制，实例要能重叠摆放，而改一次源图就该全部同步。第二是逐帧蒙版：隐藏内容而不擦除原图，并且每一帧可以有自己的蒙版。第三是可编辑文本：文字内容、字体与排版都该保留下来，而不是一次性烧成像素。'] },
           { id: 'why-principles', heading: '三条底线', paragraphs: ['作品居中：工具围绕画布，而不是相反。状态独立：缩放、旋转视图与栏目布局永远不进入撤销历史，撤销只作用于作品。能力可探测：脚本与扩展通过能力接口确认端点是否实现，而不是靠猜测。'] },
-          { id: 'why-next', heading: '接下来', paragraphs: ['项目目前处于 Beta 开发阶段。Steam 页面与发布渠道准备就绪后，这里会同步更多进展；在此之前，使用手册与更新日志是了解功能边界最可靠的两个入口。'] },
+          { id: 'why-next', heading: '接下来', paragraphs: ['MoonSprite 已登陆 Steam，后续开发进展会继续在这里发布。使用手册与更新日志提供当前功能和版本变更说明。'] },
         ],
       },
       {
@@ -66,7 +66,7 @@ const blog: Record<Language, BlogContent> = {
           { id: 'why-start', heading: 'The starting point', paragraphs: ['Pixel art is not short of tooling choices, but on Windows the list narrows quickly once you want a workstation that is clear, fast, adaptable, and does not over-complicate simple operations. MoonSprite started from something concrete: filling in the few tools we kept missing while making game assets.'] },
           { id: 'why-tools', heading: 'Three things first', paragraphs: ['First, free tiles: repeated elements such as trees, rocks, and character parts should not be chained to a grid — instances must overlap freely, and editing the source once should update every copy. Second, per-frame masks: hide content without erasing it, and let every frame carry its own mask. Third, editable text: the characters, font, and layout should stay editable instead of being burned into pixels.'] },
           { id: 'why-principles', heading: 'Three ground rules', paragraphs: ['The artwork stays central: tools wrap around the canvas, not the reverse. State stays independent: zoom, view rotation, and panel layout never enter undo history, so undo only ever affects the artwork. Capabilities are discoverable: scripts and extensions confirm an endpoint through a capability interface instead of guessing.'] },
-          { id: 'why-next', heading: 'What comes next', paragraphs: ['The project is in Beta development. As the Steam page and release channels come together, more progress will be published here; until then, the user guide and the changelog are the most reliable places to learn the exact feature boundaries.'] },
+          { id: 'why-next', heading: 'What comes next', paragraphs: ['MoonSprite is available on Steam, and development updates will continue here. See the user guide and changelog for current features and version changes.'] },
         ],
       },
       {

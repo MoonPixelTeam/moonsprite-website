@@ -54,7 +54,7 @@ export function SettlementPage({ t, language }: { t: Copy; language: Language })
         <div className="withdrawal-amount">
         <Field label={zh ? '提现金额（人民币）' : 'Withdrawal amount (USD)'}><Input autoFocus name="amount" type="number" min={step} step={step} max={priceIn(studio.available, language)} value={amount} onChange={(event) => setAmount(event.target.value)} required disabled={busy} /></Field>
           <div className="withdrawal-balance"><span>{t.studioPage.available} <strong>{money(studio.available)}</strong></span><Button size="compact" disabled={busy} onClick={() => setAmount(String(priceIn(studio.available, language)))}>{zh ? '全部提现' : 'Withdraw all'}</Button></div>
-          <p className="field-hint">{zh ? `演示换算：1 USD = ¥${USD_TO_CNY}，金额需为 ¥${USD_TO_CNY} 的整数倍。` : 'Demo withdrawals use whole USD increments.'}</p>
+          <p className="field-hint">{SITE_CONFIG.apiBaseUrl ? (zh ? `账本使用 USD；按 1 USD = ¥${USD_TO_CNY} 换算，申请金额以整美元计。管理员审核并实际转账后确认打款。` : `The ledger uses USD at 1 USD = CNY ${USD_TO_CNY}. Request whole USD amounts. Administrators confirm payouts after an actual transfer.`) : zh ? `演示换算：1 USD = ¥${USD_TO_CNY}，金额需为 ¥${USD_TO_CNY} 的整数倍。` : 'Demo withdrawals use whole USD increments.'}</p>
         </div>
         <div className="withdrawal-recipient">
         <Field label={zh ? '支付宝账号' : 'Alipay account'} hint={zh ? '填写支付宝绑定的邮箱或手机号。' : 'Email or phone linked to Alipay.'}><Input name="alipayAccount" value={account} onChange={(event) => setAccount(event.target.value)} maxLength={64} autoComplete="off" required disabled={busy} /></Field>

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Copy, Language } from '../content'
 import { useAccount } from '../account/store'
+import { apiIsLocal } from '../api'
 import { Alert, Button, Disclosure, Field, Input, Panel, SettingsRow, StatusBadge, WorkspacePage } from '../ui'
 
 type Setting = 'name' | 'email' | 'password' | 'reset' | 'delete'
@@ -60,7 +61,7 @@ export function SettingsPage({ t, language }: { t: Copy; language: Language }) {
             <div className="settings-email-state"><StatusBadge tone={account.emailVerified ? 'success' : 'warning'}>{account.emailVerified ? s.emailVerified : s.emailUnverified}</StatusBadge><span>{zh ? '当前登录邮箱' : 'Current sign-in email'}: {account.email}</span></div>
             <div className="settings-actions">
               <Button type="submit" disabled={email === account.email}>{saving('email', zh ? '保存邮箱' : 'Save email')}</Button>
-              {!account.emailVerified && <Button disabled={email !== account.email} onClick={() => { void run('email', async () => { await verifyEmail(); return { ok: true } }, s.verified) }}>{s.verifyEmail}</Button>}
+              {!account.emailVerified && <Button disabled={email !== account.email} onClick={() => { void run('email', async () => { await verifyEmail(); return { ok: true } }, apiIsLocal ? s.verified : zh ? '验证邮件已发送，请打开邮件中的链接。' : 'Verification email sent. Open the link in your email.') }}>{s.verifyEmail}</Button>}
             </div>
             {email !== account.email && <p className="panel-copy">{zh ? '请先保存新邮箱，再进行验证。' : 'Save your new email before verifying it.'}</p>}
             {message('email')}

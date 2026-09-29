@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      nodemailer:
+        specifier: ^10.0.12
+        version: 10.0.12
       react:
         specifier: 19.2.8
         version: 19.2.8
@@ -510,6 +513,10 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  nodemailer@10.0.12:
+    resolution: {integrity: sha512-PQ46oNbNMuH/Sno7B5IWIU9etytwrO0xdTFvWXpIQFRXhBAXtzD48243AS+BCbQQTPD8y3fqUrgLn0tSo77gvg==}
+    engines: {node: '>=20.0.0'}
+
   parse5@8.0.1:
     resolution: {integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw==}
 
@@ -995,6 +1002,8 @@ snapshots:
   mdn-data@2.27.1: {}
 
   nanoid@3.3.19: {}
+
+  nodemailer@10.0.12: {}
 
   parse5@8.0.1:
     dependencies:

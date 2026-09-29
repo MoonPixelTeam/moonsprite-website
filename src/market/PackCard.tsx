@@ -1,3 +1,5 @@
+import { ProductSales } from './ProductFacts'
+import { formatProductPrice } from './catalog'
 import { Button, IconButton } from '../ui'
 import { PixelCart as CartIcon, PixelCheck as Check } from '../ui/icons'
 import type { Copy, Language } from '../content'
@@ -66,11 +68,11 @@ function PriceRow({ product, t, language }: { product: MarketProduct; t: Copy; l
   if (product.category === 'bundles') {
     const full = bundleValue(product)
     return <div className="pack-price">
-      <strong>{formatPrice(product.price, language)}</strong>
+      <strong>{formatProductPrice(product.price, language)}</strong>
       {full > product.price && <s>{formatPrice(full, language)}</s>}
     </div>
   }
-  return <div className="pack-price"><strong>{formatPrice(product.price, language)}</strong></div>
+  return <div className="pack-price"><strong>{formatProductPrice(product.price, language)}</strong></div>
 }
 
 /**
@@ -142,10 +144,11 @@ export function AddButton({ product, t, inCart, owned, ownedOrderId, onAdd, bloc
     <Button
       size="compact"
       block={block}
-      className={inCart ? 'cart-action cart-icon-button has-items' : 'cart-action cart-icon-button'}
-      ariaLabel={inCart ? market.card.owned : market.card.add}
-      icon={<CartIcon aria-hidden="true" />}
+      className={inCart ? 'cart-action has-items' : 'cart-action'}
+      ariaLabel={inCart ? market.cart.open : market.card.add}
+      icon={inCart ? <Check aria-hidden="true" /> : <CartIcon aria-hidden="true" />}
       onClick={handleClick}>
+      {inCart ? market.card.owned : market.card.add}
     </Button>
   </span>
 }
@@ -159,7 +162,7 @@ export function PopularPackCard({ product, t, language }: { product: MarketProdu
     </span>
     <figcaption>
       <strong title={name}>{name}</strong>
-      <span>{formatPrice(product.price, language)}</span>
+      <span>{formatProductPrice(product.price, language)}</span>
     </figcaption>
   </a>
 }
@@ -193,7 +196,7 @@ export function AssetPackCard({ product, t, language, cart, owned, ownedOrderId 
            * card sits directly under the page h1, so an h3 here left a level missing; h2 is
            * correct for a card too, since the card is a section of the grid.
            */}
-          <h2 title={name}>{name}</h2>
+          <div className="pack-title-row"><h2 title={name}>{name}</h2><ProductSales product={product} language={language} /></div>
           <p className="pack-tagline">{summary}</p>
         </header>
         <ul className="pack-chips">
@@ -226,7 +229,7 @@ export function FeaturedPackCard({ product, t, language, cart, owned, ownedOrder
       </div>
       <div className="pack-body">
         <header className="pack-head">
-          <h2 title={name}>{name}</h2>
+          <div className="pack-title-row"><h2 title={name}>{name}</h2><ProductSales product={product} language={language} /></div>
           <p className="pack-tagline">{summary}</p>
         </header>
         <ul className="pack-chips">

@@ -1,3 +1,5 @@
+import { apiIsLocal } from '../api'
+import { formatProductPrice } from '../market/catalog'
 import { TaskLinks } from '../ui'
 import { Input, Textarea } from '../ui'
 import { WorkspacePage } from '../ui'
@@ -11,6 +13,7 @@ import { formatPrice } from '../market/catalog'
 
 import { isLocalAdmin, unlockLocalAdmin, clearLocalAdmin } from '../api/permissions'
 import { useAccount } from '../account/store'
+import { request } from '../api/transport'
 
 /**
  * The platform console. A market where anyone can publish has to have somebody reviewing:
@@ -43,8 +46,10 @@ export function AdminPage({ t, language, section }: { t: Copy; language: Languag
   const [gateError, setGateError] = useState(false)
   const [rejecting, setRejecting] = useState<string | null>(null)
   const [reason, setReason] = useState('')
+  const [payoutNotes, setPayoutNotes] = useState<Record<string, string>>({})
 
-  if (!unlocked || !account || !isLocalAdmin()) {
+  if (!apiIsLocal && !account?.roles?.includes('admin')) return <WorkspacePage title={language === 'zh' ? '需要管理员权限' : 'Administrator access required'}><p>{language === 'zh' ? '请使用具有管理权限的账号登录。' : 'Sign in with an administrator account.'}</p></WorkspacePage>
+  if (apiIsLocal && (!unlocked || !account || !isLocalAdmin())) {
     return <WorkspacePage eyebrow="ADMIN" title={strings.title} subtitle={strings.subtitle} back="#/market" backLabel={strings.back} >
           <Panel title={strings.gateTitle} icon={<KeyRound aria-hidden="true" />}>
             <p className="panel-copy">{strings.gateBody}</p>
@@ -104,11 +109,15 @@ export function AdminPage({ t, language, section }: { t: Copy; language: Languag
                 return <li key={product.id}>
                   <span className="admin-pack">
                     <strong>{product.name[language]}</strong>
-                    <small>{product.formats.join(' · ')} · {formatPrice(product.price, language)}</small>
+                    <small>{product.formats.join(' · ')} · {formatProductPrice(product.price, language)}</small>
                   </span>
                   <StatusBadge tone={state === 'approved' ? 'success' : state === 'rejected' ? 'danger' : 'warning'}>{statusLabel[state]}</StatusBadge>
                   {state === 'rejected' && why && <span className="admin-reason">{why}</span>}
                   <span className="admin-actions">
+                    {!apiIsLocal && <Button size="compact" onClick={() => { void perform(async () => {
+                      const file = await request<{ url: string }>(`/files/${encodeURIComponent(product.id)}`)
+                      window.location.assign(file.url)
+                    }) }}>{language === 'zh' ? '下载审核文件' : 'Download review file'}</Button>}
                     {state !== 'approved' && <Button size="compact" icon={<Check aria-hidden="true" />} onClick={() => { void perform(() => setStatus(product.id, 'approved')) }}>
                       {strings.approve}
                     </Button>}
@@ -169,12 +178,13 @@ export function AdminPage({ t, language, section }: { t: Copy; language: Languag
                 <span className="report-pack">{formatPrice(item.amount, language)} · {item.destination}</span>
                 <StatusBadge tone={item.status === 'paid' ? 'success' : item.status === 'rejected' ? 'danger' : 'warning'}>{t.marketPage.payoutStatus[item.status]}</StatusBadge>
                 <small>{new Date(item.requestedAt).toLocaleString(language === 'zh' ? 'zh-CN' : 'en-US')}</small>
+                {['requested', 'approved'].includes(item.status) && <Field label={language === 'zh' ? '拒绝原因 / 实际转账凭据编号' : 'Rejection reason / actual transfer reference'}><Input value={payoutNotes[item.id] ?? ''} maxLength={1000} onChange={event => setPayoutNotes(current => ({ ...current, [item.id]: event.target.value }))} /></Field>}
                 <span className="admin-actions">
                   {item.status === 'requested' && <>
                     <Button size="compact" onClick={() => { void perform(() => studio.setWithdrawalStatus(item.id, 'approved')) }}>{strings.approveWithdrawal}</Button>
-                    <Button size="compact" onClick={() => { void perform(() => studio.setWithdrawalStatus(item.id, 'rejected')) }}>{strings.rejectWithdrawal}</Button>
+                    <Button size="compact" disabled={!payoutNotes[item.id]?.trim()} onClick={() => { void perform(() => studio.setWithdrawalStatus(item.id, 'rejected', payoutNotes[item.id])) }}>{strings.rejectWithdrawal}</Button>
                   </>}
-                  {item.status === 'approved' && <Button size="compact" onClick={() => { void perform(() => studio.setWithdrawalStatus(item.id, 'paid')) }}>{strings.markPaid}</Button>}
+                  {item.status === 'approved' && <Button size="compact" disabled={!payoutNotes[item.id]?.trim()} onClick={() => { void perform(() => studio.setWithdrawalStatus(item.id, 'paid', payoutNotes[item.id])) }}>{strings.markPaid}</Button>}
                 </span>
               </li>)}
             </ul>}
@@ -182,7 +192,7 @@ export function AdminPage({ t, language, section }: { t: Copy; language: Languag
         {section === 'settings' && <Panel title={strings.fee}>
           <p className="panel-copy">{strings.feeHint(studio.platformFeePercent)}</p>
           <form className="settings-form" onSubmit={(event) => { event.preventDefault(); void perform(() => studio.setPlatformFeePercent(Number(fee))) }}>
-            <Field label={language === 'zh' ? '平台费率（%）' : 'Platform fee (%)'}><Input type="number" min="0" max="100" step="1" required value={fee} placeholder={String(studio.platformFeePercent)} onChange={(event) => setFee(event.target.value)} /></Field>
+            <Field label={language === 'zh' ? '平台费率（%）' : 'Platform fee (%)'}><Input type="number" min="0" max="60" step="1" required value={fee} placeholder={String(studio.platformFeePercent)} onChange={(event) => setFee(event.target.value)} /></Field>
             <Button type="submit" variant="primary">{language === 'zh' ? '保存费率' : 'Save fee'}</Button>
           </form>
         </Panel>}

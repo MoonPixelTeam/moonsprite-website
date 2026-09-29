@@ -7,7 +7,7 @@
    按页头留白取高度 26px（约 174x26），宽度由原生比例推导，允许非整数倍缩放，
    由浏览器平滑重采样。素材自带配色，不需按主题改色。
    同名的 img.footer-wordmark 在 responsive.css 里负责页脚尺寸。 */
-img.titlebar-wordmark { width: 173.9px; height: 26px; }
+img.titlebar-wordmark { width: 173.9px; height: 26px; image-rendering: pixelated; }
 .titlebar-app small { overflow: hidden; color: var(--text-4); font-size: var(--font-small); text-overflow: ellipsis; white-space: nowrap; }
 .titlebar-controls { display: flex; }
 .titlebar-controls i { display: grid; place-items: center; width: 36px; height: 32px; color: var(--text-3); font-family: var(--font-pixel); font-size: var(--font-pixel-tag); font-style: normal; line-height: 1; }
@@ -75,3 +75,6 @@ img.titlebar-wordmark { width: 173.9px; height: 26px; }
 .pixel-icon { display: inline-flex; width: 16px; height: 16px; flex: 0 0 auto; color: var(--text-2); }
 .pixel-icon svg { width: 100%; height: 100%; image-rendering: pixelated; }
 .pixel-icon.large { width: 16px; height: 16px; color: var(--text-4); }
+
+
+

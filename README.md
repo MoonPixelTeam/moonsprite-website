@@ -4,6 +4,8 @@ MoonSprite 官网的独立仓库。桌面版应用在另一个仓库 `moonsprite
 
 ## 环境
 
+需要 Node.js 24 或以上。前后端启动、管理员初始化、商品迁移和 ZPAY 配置见 [后端运行说明](docs/backend-setup.md)。
+
 ```powershell
 pnpm install
 ```
@@ -11,11 +13,13 @@ pnpm install
 ## 常用命令
 
 ```powershell
-pnpm dev            # 开发服务器，http://localhost:4174
+pnpm dev            # 前后端一起启动，默认 http://localhost:5173（BAT 使用 4174）
 pnpm check          # tsc --noEmit + 样式类名检查 + 像素图标检查
-pnpm test           # 三个流程测试（上架、买卖家生命周期、工作区深链）
+pnpm test           # 前端流程、HTTP 合同、后端安全与结算测试
 pnpm build          # tsc --noEmit + vite build，产物在 dist/
 pnpm preview        # 预览 dist/
+pnpm start          # 提供 dist/ 和 /api；需先 build
+pnpm test:backend   # 只运行后端集成测试
 ```
 
 `pnpm test` 通过 Vite 的 `ssrLoadModule` 直接加载 `src/` 源码，不需要先构建。
@@ -40,7 +44,7 @@ $env:VITE_TRIAL_URL = "http://127.0.0.1:5174/try/"; pnpm dev
 
 ## 内部开关：开发中入口
 
-商店、购物车、比赛和账户仍是本地原型，正式站上这四个入口只回答一句「功能开发中，敬请期待」，不会打开对应界面。开关状态按下面的顺序解析，先命中者生效：
+商店与账户已接入后端，但沿用原来的正式站功能闸门；默认构建中这些入口显示「功能开发中，敬请期待」。对外开放前配置后端并显式开启。比赛仍是静态展示。开关状态按下面的顺序解析，先命中者生效：
 
 | 方式 | 作用范围 | 说明 |
 | --- | --- | --- |
@@ -67,6 +71,8 @@ $env:VITE_TRIAL_URL = "http://127.0.0.1:5174/try/"; pnpm dev
 上线前请确认 `pnpm build` 产物是锁定态：打开 preview 后市场入口应弹出提示而不是跳转，直接访问 `#/account` 应看到开发中页面而不是登录表单。
 
 ## 部署
+
+以下 GitHub Pages 流程仅适用于静态介绍站。需要账户、购买和文件服务时，使用 [Node 后端部署方式](docs/backend-setup.md)，将同源 `/api` 与页面部署到自己的 HTTPS 服务器；GitHub Pages 无法运行后端。构建产物已排除商品交付包，文件下载必须走 API。
 
 站点是纯静态产物（`dist/`），用 hash 路由，不需要服务端或 SPA 回退。推送到 `main` 后由 `.github/workflows/deploy.yml` 自动发布到 GitHub Pages。
 
@@ -119,3 +125,16 @@ res/rec/          功能动图源素材
 - 容器保持直角与 1px 边框；`#2979FF` 是唯一强调色。
 - 图标只用 `src/assets/icons/` 的本地像素 SVG 副本，禁止内联 `<svg>`/`<path>`、字符图标或第三方图标库，`pnpm check` 会拒绝。
 - 中英文文案必须成对：`src/pages/*Copy.ts` 与 `src/content.ts` 的两种语言同时补齐。
+
+## 后端对接
+
+接口合同与文件传输见 [docs/backend-api.md](docs/backend-api.md)，运行和 ZPAY/SMTP 配置见 [docs/backend-setup.md](docs/backend-setup.md)。
+默认 `VITE_API_BASE_URL=/api`；显式留空才使用旧本地演示数据。服务器密钥只在未提交的 `.env` 或服务器环境变量中配置。
+
+## 宠物素材导入
+
+```powershell
+node scripts/import-pets.mjs mooncat "D:/assets/mooncat.mspet" "Mooncat" 0
+```
+
+依次传入商品标识、文件路径、英文名称、人民币价格。脚本更新指定宠物并保留其他商品，不再依赖固定的桌面或下载目录；提取帧需要本机 Microsoft Edge 和项目中的 Playwright。

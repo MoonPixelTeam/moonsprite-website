@@ -17,6 +17,7 @@ export function PurchasesPage({ t, language }: { t: Copy; language: Language }) 
   const zh = language === 'zh'
   const visibleOrders = [...orders].sort((a, b) => b.createdAt - a.createdAt).filter((order) => `${order.id} ${order.lines.map((line) => { const product = products.find((item) => item.id === line.id); return `${line.name} ${product ? productCopy(product.name, language) : ''}` }).join(' ')}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
   return <WorkspacePage title={strings.purchasesTitle} subtitle={zh ? '按购买时间倒序排列，进入订单查看明细与下载。' : 'Newest orders first. Open an order for details and downloads.'}>
+    {orders.some(order => order.status === 'pending') && <Button onClick={() => window.dispatchEvent(new Event('moonsprite:data'))}>{zh ? '刷新付款状态' : 'Refresh payment status'}</Button>}
     {!account
       ? <Panel title={strings.signedInAs}>
         <p className="panel-copy">{strings.purchasesSignedOut}</p>

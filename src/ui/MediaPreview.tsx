@@ -3,7 +3,13 @@ import { createPortal } from 'react-dom'
 import { IconButton } from './primitives'
 import { PixelChevronLeft, PixelChevronRight, PixelX } from './icons'
 
-export type PreviewSlide = { src: string; title: string }
+export type PreviewSlide = {
+  /** Still image. Doubles as the poster frame when the slide is a clip. */
+  src: string
+  title: string
+  /** Full-resolution demo clip. When present the slide plays instead of showing a still. */
+  video?: string
+}
 export type PreviewMedia = { src?: string; slides?: PreviewSlide[]; title: string; description?: string }
 /** Native modal supplies focus containment, Escape handling and an inert background. */
 export function MediaPreview({ media, closeLabel, previousLabel = 'Previous', nextLabel = 'Next', onClose }: { media: PreviewMedia | null; closeLabel: string; previousLabel?: string; nextLabel?: string; onClose: () => void }) {
@@ -35,8 +41,14 @@ export function MediaPreview({ media, closeLabel, previousLabel = 'Previous', ne
         </>}
         <IconButton className="hero-arrow media-preview-close" label={closeLabel} onClick={onClose} icon={<PixelX aria-hidden="true" />} />
       </div></header>
+      {/* Keyed on the source so switching slides tears the previous clip down instead of leaving
+          it decoding behind the new one. */}
       <div className="media-preview-frame">
-        {active ? <img key={active.src} src={active.src} alt={title} /> : <span className="media-preview-placeholder">GIF</span>}
+        {active
+          ? active.video
+            ? <video key={active.video} src={active.video} poster={active.src} autoPlay loop muted playsInline />
+            : <img key={active.src} src={active.src} alt={title} />
+          : <span className="media-preview-placeholder">GIF</span>}
       </div>
       {media.description && <p>{media.description}</p>}
     </div>

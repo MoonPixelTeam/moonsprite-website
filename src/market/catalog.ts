@@ -1,3 +1,4 @@
+import { importedPets } from './importedPets'
 /*
  * The packs sold in the market.
  *
@@ -28,6 +29,7 @@ function L(value: Bilingual, language: Language): string {
  * app plays. `idle` drives the preview row.
  */
 export type PackAnimations = {
+  triggers?: { id: string; event: string; repeat?: boolean; cooldownMs?: number; tool?: string; idleSeconds?: number }[]
   order: string[]
   sheets: Record<string, SpriteSheet>
   /** Pack animation id to display name, per language. */
@@ -145,7 +147,13 @@ export type ScriptProduct = {
   includes: Bilingual[]
 }
 
-export type MarketProduct = { previews?: string[] } & (
+export type MarketProduct = {
+  previews?: string[]
+  soldCount?: number
+  cartCount?: number
+  updatedAt?: number
+  compatibleVersion?: string
+} & (
   | PetPackProduct
   | AssetPackProduct
   | BundleProduct
@@ -168,6 +176,7 @@ const nailongSheets: Record<string, SpriteSheet> = {
 }
 
 export const MARKET_PRODUCTS: MarketProduct[] = [
+  ...importedPets,
   {
     id: 'pet-nailong',
     category: 'pets',
@@ -397,3 +406,10 @@ export function formatPrice(amount: number, language: Language): string {
   return `${language === 'zh' ? '¥' : '$'}${text}`
 }
 
+
+
+
+/** Product labels distinguish free resources from monetary totals. */
+export function formatProductPrice(amount: number, language: Language): string {
+  return amount === 0 ? (language === 'zh' ? '免费' : 'Free') : formatPrice(amount, language)
+}

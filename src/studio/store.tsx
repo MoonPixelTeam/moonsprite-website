@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { api, readStudioUnlocked, writeStudioUnlocked } from '../api'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { api, apiIsLocal } from '../api'
+import { readStudioUnlocked, writeStudioUnlocked } from '../api/prototypeSession'
 import { useAccount } from '../account/store'
 import type { Ledger, StudioProduct, Withdrawal } from '../api'
 import { MARKET_PRODUCTS, type MarketProduct } from '../market/catalog'
@@ -55,16 +56,23 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [ledger, setLedger] = useState<Ledger>(EMPTY_LEDGER)
   const [platformFeePercent, setFeePercent] = useState(8)
   const [loading, setLoading] = useState(true)
-  const [unlocked, setUnlockedState] = useState(() => readStudioUnlocked(account?.id))
+  const currentIdentity = useRef(account?.id)
+  currentIdentity.current = account?.id
+  const [unlocked, setUnlockedState] = useState(() => (apiIsLocal ? readStudioUnlocked(account?.id) : Boolean(account?.roles?.some(role => role === 'creator' || role === 'admin'))))
 
   // A seller gate belongs to the signed-in account, not to the browser session.
   useEffect(() => {
-    setUnlockedState(readStudioUnlocked(account?.id))
+    setUnlockedState((apiIsLocal ? readStudioUnlocked(account?.id) : Boolean(account?.roles?.some(role => role === 'creator' || role === 'admin'))))
+    setProducts([]); setLedger(EMPTY_LEDGER)
   }, [account?.id])
 
   const reload = useCallback(async () => {
+    if (!apiIsLocal && !account?.roles?.some(role => role === 'creator' || role === 'admin')) {
+      setProducts([]); setLedger(EMPTY_LEDGER); setLoading(false); return
+    }
     try {
       const [nextProducts, nextLedger, fee] = await Promise.all([api.studio.products(), api.studio.ledger(), api.studio.platformFee()])
+      if (currentIdentity.current !== account?.id) return
       setProducts(nextProducts)
       setLedger(nextLedger)
       setFeePercent(fee)
@@ -88,9 +96,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   }, [reload])
 
   const setUnlocked = useCallback((value: boolean) => {
-    const next = Boolean(value && account)
+    const next = Boolean(value && account && (apiIsLocal || account.roles?.some(role => role === 'creator' || role === 'admin')))
     setUnlockedState(next)
-    writeStudioUnlocked(next, account?.id)
+    if (apiIsLocal) writeStudioUnlocked(next, account?.id)
   }, [account])
 
   const publish: StudioStore['publish'] = useCallback(async (input) => {

@@ -95,6 +95,8 @@
 .section-title-icon { display: inline-flex; flex: 0 0 22px; align-items: center; justify-content: center; width: 22px; height: 22px; color: var(--accent); opacity: 1; }
 .section-title-icon svg { display: block; width: 22px !important; height: 22px !important; min-width: 22px; min-height: 22px; image-rendering: pixelated; }
 .section-title p { max-width: 58ch; margin-top: var(--space-7); color: var(--text-3); font-size: var(--font-body); line-height: 1.7; }
+.home-main .section-title { max-width: none; min-width: 0; }
+.home-main .section-title p { max-width: none; }
 
 /* The rule sits on the eyebrow's own line, extending to the column edge. */
 .section-title { display: grid; }
@@ -122,6 +124,7 @@
 
 /* ---------- features: gif masonry ---------- */
 
+
 /* The homepage runs on one background; sections are separated by a hairline and their
    own spacing, so the page reads as one surface instead of stacked panels. A faint top
    wash keeps each band from being a perfectly flat rectangle. */
@@ -132,8 +135,8 @@
   border-top: 1px solid var(--divider);
 }
 .features .section-title { margin-bottom: var(--space-13); }
-.masonry { columns: 4; column-gap: var(--space-7); }
-.masonry-card { break-inside: avoid; margin: 0 0 var(--space-7); overflow: hidden; border: 1px solid var(--border); background-color: var(--panel); background-image: linear-gradient(180deg, var(--wash-soft), transparent 60%); transition: border-color 120ms ease, transform 160ms ease; }
+.masonry { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-7) var(--space-8); }
+.masonry-card { min-width: 0; margin: 0; overflow: hidden; border: 1px solid var(--border); background-color: var(--panel); background-image: linear-gradient(180deg, var(--wash-soft), transparent 60%); transition: border-color 120ms ease, transform 160ms ease; }
 .masonry-card:hover { border-color: var(--accent); }
 .masonry-copy { margin: 0; padding: var(--space-7) var(--space-8) var(--space-8); color: var(--text-3); font-size: var(--font-small); line-height: 1.65; }
 
@@ -166,3 +169,40 @@
 .masonry-card:nth-child(6n + 5) .gif-placeholder { height: 160px; }
 .masonry-card:nth-child(6n + 6) .gif-placeholder { height: 212px; }
 .gif-tag { position: absolute; left: 12px; bottom: 10px; padding: var(--space-2) var(--space-3); background: var(--bg); border: 1px solid var(--border-strong); color: var(--text-2); font-family: var(--font-pixel); font-size: var(--font-pixel-tag); }
+
+
+
+
+
+/* Platform availability is visible before the feature tour. */
+.download-platforms { padding-block: var(--space-20); background: var(--bg); }
+.download-platforms h2 { margin: 0 0 var(--space-10); text-align: center; color: var(--text); font-size: var(--font-h2); }
+.download-platform-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-7); }
+.download-platform { display: flex; align-items: center; gap: var(--space-6); min-width: 0; padding: var(--space-7); border: 1px solid var(--border); background: var(--panel); color: var(--text-3); text-align: left; text-decoration: none; font: inherit; }
+.download-platform:disabled { opacity: 1; cursor: not-allowed; }
+.download-platform > svg { flex-shrink: 0; }
+.download-platform-copy { display: grid; gap: var(--space-2); min-width: 0; }
+.download-platform-copy small { font-size: var(--font-small); }
+.download-platform-copy strong { font-size: var(--font-lead); color: var(--text-2); white-space: nowrap; }
+.download-platform-status { margin-left: auto; font-size: var(--font-small); white-space: nowrap; }
+.download-platform.available { color: var(--accent); border-color: var(--accent); }
+.download-platform.available strong { color: var(--text); }
+.download-platform.available:hover { background: var(--raised); }
+.download-platform.available:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 1100px) { .download-platform-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 480px) { .download-platform-grid { grid-template-columns: minmax(0, 1fr); } }
+.download-platform-icon { display: block; flex: 0 0 48px; width: 48px; height: 48px; background-image: url("/assets/platform-icons.png"); background-repeat: no-repeat; background-size: 192px 48px; image-rendering: pixelated; }
+.download-platform-icon.apple { background-position: 0 0; }
+.download-platform-icon.google { background-position: -48px 0; }
+.download-platform-icon.steam { background-position: -96px 0; }
+.download-platform-icon.android { background-position: -144px 0; }
+@media (min-width: 1101px) and (max-width: 1350px), (max-width: 600px) {
+  .download-platform-icon { flex-basis: 32px; width: 32px; height: 32px; background-size: 128px 32px; }
+  .download-platform-icon.google { background-position: -32px 0; }
+  .download-platform-icon.steam { background-position: -64px 0; }
+  .download-platform-icon.android { background-position: -96px 0; }
+}
+
+/* White monochrome platform artwork needs contrast on light surfaces. */
+:root[data-theme='light'] .download-platform-icon.apple,
+:root[data-theme='light'] .download-platform-icon.steam { filter: brightness(0.18); }

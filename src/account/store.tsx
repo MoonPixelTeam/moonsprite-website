@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { api } from '../api'
 import type { Account, Order, OrderLine } from '../api'
 
@@ -16,7 +16,7 @@ export type AccountStore = {
   signIn: (input: { email: string; password: string }) => Promise<{ ok: true } | { ok: false; error: string }>
   signOut: () => Promise<void>
   /** Records a purchase against the signed-in account. */
-  addOrder: (lines: OrderLine[]) => Promise<{ ok: boolean; error?: string; order?: Order }>
+  addOrder: (lines: OrderLine[], paymentType?: 'alipay' | 'wxpay') => Promise<{ ok: boolean; error?: string; order?: Order }>
   orders: Order[]
   /** Every pack this account has bought, for the "owned" state in the market. */
   owned: Set<string>
@@ -35,13 +35,16 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Account | null>(null)
   const [orders, setOrders] = useState<Order[]>([])
   const [ready, setReady] = useState(false)
+  const sessionVersion = useRef(0)
 
   const loadOrders = useCallback(async () => {
+    const version = sessionVersion.current
     try {
-      setOrders(await api.orders.list())
+      const next = await api.orders.list()
+      if (version === sessionVersion.current) setOrders(next)
     } catch (error) {
       console.warn('MoonSprite account: could not load orders.', error)
-      setOrders([])
+      if (version === sessionVersion.current) setOrders([])
     }
   }, [])
 
@@ -49,11 +52,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let alive = true
     const boot = async () => {
+      const version = ++sessionVersion.current
       try {
         const current = await api.auth.current()
-        if (!alive) return
+        const next = current ? await api.orders.list() : []
+        if (!alive || version !== sessionVersion.current) return
         setAccount(current)
-        setOrders(current ? await api.orders.list() : [])
+        setOrders(next)
       } catch (error) {
         console.warn('MoonSprite account: could not restore the session.', error)
       } finally {
@@ -64,10 +69,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     const refresh = () => { void loadOrders() }
     const refreshSession = () => { void boot() }
     window.addEventListener('storage', refreshSession)
+    window.addEventListener('focus', refreshSession)
     window.addEventListener('moonsprite:data', refresh)
     return () => {
       alive = false
       window.removeEventListener('storage', refreshSession)
+      window.removeEventListener('focus', refreshSession)
       window.removeEventListener('moonsprite:data', refresh)
     }
   }, [loadOrders])
@@ -75,6 +82,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const register = useCallback(async (input: { name: string; email: string; password: string }) => {
     const result = await api.auth.register(input)
     if (!result.ok) return { ok: false as const, error: result.error }
+    sessionVersion.current++
     setAccount(result.account)
     setOrders([])
     return { ok: true as const }
@@ -83,6 +91,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async (input: { email: string; password: string }) => {
     const result = await api.auth.signIn(input)
     if (!result.ok) return { ok: false as const, error: result.error }
+    sessionVersion.current++
     setAccount(result.account)
     await loadOrders()
     return { ok: true as const }
@@ -90,12 +99,13 @@ export function AccountProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await api.auth.signOut()
+    sessionVersion.current++
     setAccount(null)
     setOrders([])
   }, [])
 
-  const addOrder = useCallback(async (lines: OrderLine[]) => {
-    const result = await api.orders.create(lines)
+  const addOrder = useCallback(async (lines: OrderLine[], paymentType?: 'alipay' | 'wxpay') => {
+    const result = await api.orders.create(lines, paymentType)
     if (!result.ok) return { ok: false as const, error: result.error }
     await loadOrders()
     // The receipt needs the order it just created.
@@ -103,7 +113,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   }, [loadOrders])
 
   const owned = useMemo(
-    () => new Set(orders.flatMap((order) => order.lines.map((line) => line.id))),
+    () => new Set(orders.filter(order => order.status !== 'pending').flatMap((order) => order.lines.map((line) => line.id))),
     [orders],
   )
 
@@ -129,10 +139,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
   const verifyEmail = useCallback(async () => {
     const result = await api.auth.verifyEmail()
     if (result.ok) setAccount(result.account)
+    else throw new Error(result.error)
   }, [])
 
   const deleteAccount = useCallback(async () => {
     await api.auth.deleteAccount()
+    sessionVersion.current++
     setAccount(null)
     setOrders([])
   }, [])

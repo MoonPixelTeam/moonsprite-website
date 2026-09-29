@@ -1,3 +1,4 @@
+import { formatProductPrice } from '../market/catalog'
 import { EarningsOverview } from '../studio/EarningsOverview'
 import { TaskLinks } from '../ui'
 import { Input } from '../ui'
@@ -67,7 +68,7 @@ function PublishedPacks({ t, language }: { t: Copy; language: Language }) {
             <small><StatusBadge tone={statusOf(product.id) === 'approved' ? 'success' : statusOf(product.id) === 'rejected' ? 'danger' : 'warning'}>{({ pending: language === 'zh' ? '审核中' : 'In review', approved: language === 'zh' ? '已上架' : 'Approved', rejected: language === 'zh' ? '需修改' : 'Changes required' })[statusOf(product.id)]}</StatusBadge>{rejectionReason(product.id) ? ` · ${rejectionReason(product.id)}` : ''}</small>
             <small>{[productCopy(product.size, language), product.formats.join(' · ')].filter(Boolean).join(' · ') || '—'}</small>
           </span>
-          <span className="studio-pack-price">{formatPrice(product.price, language)}</span>
+          <span className="studio-pack-price">{formatProductPrice(product.price, language)}</span>
           <div className="workspace-row-actions">
           {/* Editing reopens the publish page with this pack loaded. */}
           <Button size="compact" icon={<Pencil aria-hidden="true" />} href={`#/studio/publish/${product.id}`}>{strings.edit}</Button>

@@ -10,7 +10,7 @@ export function AccountPage({ t, language }: { t: Copy; language: Language }) {
   const zh = language === 'zh'
   if (!account) return null
   const recent = [...orders].sort((a, b) => b.createdAt - a.createdAt).slice(0, 3)
-  const owned = new Set(orders.flatMap((order) => order.lines.map((line) => line.id))).size
+  const owned = new Set(orders.filter(order => order.status !== 'pending').flatMap((order) => order.lines.map((line) => line.id))).size
   return <WorkspacePage title={zh ? '个人中心' : 'Your account'} subtitle={zh ? '查看已购作品，管理你的账号。' : 'Your purchases and account, in one place.'}>
     <Panel title={account.name} actions={<><Button size="compact" href="#/settings">{t.accountSettings.title}</Button><Button size="compact" onClick={() => { void signOut() }}>{t.accountPage.signOut}</Button></>}>
       <p className="panel-copy">{account.email}</p>

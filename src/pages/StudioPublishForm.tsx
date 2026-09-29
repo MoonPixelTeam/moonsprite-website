@@ -1,5 +1,5 @@
 import { Input, Textarea } from '../ui'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { PixelFileArchive as FileArchive, PixelPencil as Pencil } from '../ui/icons'
 import type { Copy, Language } from '../content'
 import { copy } from '../content'
@@ -11,7 +11,7 @@ import { cnyToUsd, formatPrice, usdToCny } from '../market/catalog'
 import { getFile, putFile } from '../api/files'
 import type { Cart } from '../market/cart'
 import { ListingFields, type ListingDetails } from '../studio/ListingFields'
-import { PackDetailPage } from './Market'
+const PackDetailPage = lazy(() => import('./Market').then(module => ({ default: module.PackDetailPage })))
 import { saveListing } from '../studio/save-listing'
 
 /** The preview card is not for sale, so it gets a cart that ignores every action. */
@@ -156,7 +156,7 @@ export function StudioPublish({ t, language, editing, onDone }: {
       <span>{language === 'zh' ? '详情预览 · 尚未提交' : 'Detail preview · Not submitted'}</span>
     </div>
     <div onClickCapture={(event) => { if ((event.target as HTMLElement).closest('a')) { event.preventDefault(); event.stopPropagation() } }}>
-      <PackDetailPage t={copy[previewLanguage]} language={previewLanguage} previewProduct={previewProduct} />
+      <Suspense fallback={<p role="status">{language === 'zh' ? '正在载入预览…' : 'Loading preview…'}</p>}><PackDetailPage t={copy[previewLanguage]} language={previewLanguage} previewProduct={previewProduct} /></Suspense>
     </div>
   </div>
 
