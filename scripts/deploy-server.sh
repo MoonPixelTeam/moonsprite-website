@@ -26,5 +26,9 @@ cp -R "$trial_dir/editor/out/web-trial" dist/try
 test -s dist/try/index.html
 sudo systemctl restart "$service_name"
 sudo systemctl --no-pager --full status "$service_name"
-curl --fail --silent --show-error --head http://127.0.0.1:3001/ >/dev/null
+for attempt in {1..15}; do
+  if curl --fail --silent --show-error --head http://127.0.0.1:3001/ >/dev/null; then break; fi
+  if [[ "$attempt" == 15 ]]; then echo 'MoonSprite API did not become ready' >&2; exit 1; fi
+  sleep 1
+done
 echo "MoonSprite deployed from $(git rev-parse --short HEAD)"
