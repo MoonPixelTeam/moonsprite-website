@@ -10,7 +10,8 @@ export function serveStatic(directory) {
     if (!['GET', 'HEAD'].includes(req.method)) return fail(405)
     let path
     try { path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname) } catch { return fail(400) }
-    const target = resolve(root, '.' + (path === '/' ? '/index.html' : path))
+    const targetPath = path === '/' || path.endsWith('/') ? `${path}index.html` : path
+    const target = resolve(root, '.' + targetPath)
     if (!target.startsWith(root + sep) || !types[extname(target)] || path.split('/').some(part => part.startsWith('.'))) return fail(404)
     // Only presentation assets are public. Archives/packages are always private API downloads.
     let file
