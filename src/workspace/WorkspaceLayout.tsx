@@ -24,9 +24,11 @@ export function WorkspaceLayout({ route, language, children }: { route: Route; l
       { href: '#/studio/settlement', label: zh ? '收益与结算' : 'Payouts', active: route.page === 'settlement' },
     ] },
   ]
-  if (route.page === 'admin' || isLocalAdmin()) groups.push({ title: zh ? '平台管理' : 'Administration', links: [
+  if (route.page === 'admin' || account?.roles?.includes('admin') || isLocalAdmin()) groups.push({ title: zh ? '平台管理' : 'Administration', links: [
     { href: '#/admin', label: zh ? '管理概览' : 'Admin overview', active: route.page === 'admin' && !route.subId },
     ...[
+      ['data', zh ? '数据浏览' : 'Data browser'],
+      ['users', zh ? '用户权限组' : 'User groups'],
       ['listings', zh ? '作品审核' : 'Listing review'], ['tickets', zh ? '客服工单' : 'Support tickets'],
       ['reports', zh ? '举报处理' : 'Reports'], ['payouts', zh ? '提现审核' : 'Withdrawal review'], ['settings', zh ? '平台设置' : 'Platform settings'],
     ].map(([id, label]) => ({ href: `#/admin/${id}`, label, active: route.page === 'admin' && route.subId === id })),

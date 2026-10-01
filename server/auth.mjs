@@ -1,3 +1,4 @@
+import { hasRole } from './roles.mjs'
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHash } from 'node:crypto'
 import { promisify } from 'node:util'
 import { requireValue } from './validation.mjs'
@@ -36,7 +37,7 @@ export function authentication(store, config) {
   const requireAccount = (req, role) => {
     const account = current(req)
     requireValue(account, 'unauthenticated', 401)
-    requireValue(!role || account.roles.includes(role) || account.roles.includes('admin'), 'forbidden', 403)
+    requireValue(!role || hasRole(account, role), 'forbidden', 403)
     return account
   }
   return { current, start, end, requireAccount }

@@ -19,11 +19,12 @@ export function DocumentMeta({ route, language, t }: { route: Route; language: L
       ui: 'UI kit - MoonSprite', license: `${t.marketPage.license.title} - MoonSprite`,
       receipt: `${t.marketPage.receipt.title} - MoonSprite`, orders: `${t.marketPage.orders.title} - MoonSprite`,
       settings: `${t.accountSettings.title} - MoonSprite`, support: `${t.supportPage.title} - MoonSprite`,
+      'studio-preview': language === 'zh' ? '商品详情预览 - MoonSprite' : 'Product preview - MoonSprite',
       settlement: `${t.studioSettlement.title} - MoonSprite`, admin: `${t.adminPage.title} - MoonSprite`,
     }
     const taskTitles: Record<string, string> = language === 'zh'
-      ? { products: '作品管理', sales: '销售记录', listings: '作品审核', tickets: '客服工单', reports: '举报处理', payouts: '提现审核', settings: '平台设置' }
-      : { products: 'Manage products', sales: 'Sales', listings: 'Listing review', tickets: 'Support tickets', reports: 'Reports', payouts: 'Withdrawal review', settings: 'Platform settings' }
+      ? { data: '数据浏览', users: '用户权限组', products: '作品管理', sales: '销售记录', listings: '作品审核', tickets: '客服工单', reports: '举报处理', payouts: '提现审核', settings: '平台设置' }
+      : { data: 'Data browser', users: 'User groups', products: 'Manage products', sales: 'Sales', listings: 'Listing review', tickets: 'Support tickets', reports: 'Reports', payouts: 'Withdrawal review', settings: 'Platform settings' }
     document.title = (route.page === 'studio' || route.page === 'admin') && route.subId && taskTitles[route.subId] ? `${taskTitles[route.subId]} - MoonSprite` : titles[route.page]
     document.querySelector('meta[name="description"]')?.setAttribute('content', t.meta.description)
     document.querySelector('meta[property="og:title"]')?.setAttribute('content', t.meta.title)

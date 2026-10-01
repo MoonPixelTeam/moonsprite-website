@@ -1,3 +1,4 @@
+import { StudioPreviewPage } from '../pages/StudioPreview'
 import { CompetitionsPage } from '../pages/Competitions'
 import { AuthPage } from '../pages/Auth'
 import { Suspense, lazy } from 'react'
@@ -29,6 +30,7 @@ export function RouteOutlet({ route, t, language }: { route: Route; t: Copy; lan
 
   return <>
     {(route.page === 'login' || route.page === 'register') && <AuthPage key={route.page} mode={route.page} returnTo={route.returnTo} t={t} language={language} />}
+    {route.page === 'studio-preview' && <StudioPreviewPage key={route.subId} productId={route.subId} language={language} />}
     <WorkspaceRoutes route={route} t={t} language={language} />
     {route.page === 'competitions' && <CompetitionsPage language={language} />}
     {route.page === 'home' && <Home t={t} language={language} />}

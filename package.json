@@ -11,6 +11,7 @@
     "manage": "node --env-file-if-exists=.env server/manage.mjs",
     "seed:catalogue": "node scripts/seed-catalogue.mjs",
     "test:backend": "node --test scripts/backend.test.mjs",
+    "test:publish": "node scripts/publish-wizard-smoke.mjs",
     "test:browser": "node scripts/backend-smoke.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

@@ -12,7 +12,8 @@ export function DownloadPlatforms({ language }: { language: Language }) {
   ]
   return <section className="download-platforms" aria-labelledby="download-platforms-title">
     <div className="content-wrap">
-      <h2 id="download-platforms-title">{zh ? '面向桌面端（其它端加急开发中）的像素艺术专业编辑器' : 'A professional pixel art editor for desktop (other platforms in active development)'}</h2>
+      <h2 id="download-platforms-title">{zh ? '专注像素绘画与动画创作，桌面版现已上线' : 'Pixel art and animation, now on desktop'}</h2>
+      <p className="download-platforms-description">{zh ? 'iOS 与 Android 版本正在开发中，敬请期待。' : 'iOS and Android versions are in development. Stay tuned.'}</p>
       <div className="download-platform-grid">
         {platforms.map(platform => {
           const content = <><span className={`download-platform-icon ${platform.icon}`} aria-hidden="true" /><span className="download-platform-copy"><small>{platform.device}</small><strong>{platform.name}</strong></span><span className="download-platform-status">{platform.available ? <PixelArrowRight /> : zh ? '敬请期待' : 'Coming soon'}</span></>

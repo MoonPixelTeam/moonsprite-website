@@ -1,3 +1,5 @@
+import { DataBrowser } from '../account/DataBrowser'
+import { UserGroups } from '../account/UserGroups'
 import { apiIsLocal } from '../api'
 import { formatProductPrice } from '../market/catalog'
 import { TaskLinks } from '../ui'
@@ -77,9 +79,11 @@ export function AdminPage({ t, language, section }: { t: Copy; language: Languag
   }
   const openReports = reports.filter((report: Report) => report.status === 'open')
 
-  const title = section === 'listings' ? strings.listings : section === 'tickets' ? t.supportPage.tickets : section === 'reports' ? strings.reports : section === 'payouts' ? strings.withdrawals : section === 'settings' ? (language === 'zh' ? '平台设置' : 'Platform settings') : strings.title
+  const title = section === 'data' ? (language === 'zh' ? '数据浏览' : 'Data browser') : section === 'users' ? (language === 'zh' ? '用户权限组' : 'User groups') : section === 'listings' ? strings.listings : section === 'tickets' ? t.supportPage.tickets : section === 'reports' ? strings.reports : section === 'payouts' ? strings.withdrawals : section === 'settings' ? (language === 'zh' ? '平台设置' : 'Platform settings') : strings.title
   const visibleProducts = studio.products.filter((product) => filter === 'all' || statusOf(product.id) === filter)
-  return <WorkspacePage eyebrow="ADMIN" title={title} subtitle={section === 'listings' ? strings.listingsHint : section === 'reports' ? strings.reportsHint : section === 'payouts' ? strings.withdrawalsHint : section === 'tickets' ? (language === 'zh' ? '查看用户问题、关联订单与回复记录。' : 'Review customer questions, related orders and replies.') : section === 'settings' ? (language === 'zh' ? '设置作品销售的平台服务费比例。' : 'Set the service fee applied to product sales.') : strings.subtitle} >
+  return <WorkspacePage eyebrow="ADMIN" title={title} subtitle={section === 'data' ? (language === 'zh' ? '像查看表格一样查阅业务数据，支持搜索、筛选和翻页。' : 'Browse server records in searchable, filterable tables.') : section === 'listings' ? strings.listingsHint : section === 'reports' ? strings.reportsHint : section === 'payouts' ? strings.withdrawalsHint : section === 'tickets' ? (language === 'zh' ? '查看用户问题、关联订单与回复记录。' : 'Review customer questions, related orders and replies.') : section === 'settings' ? (language === 'zh' ? '设置作品销售的平台服务费比例。' : 'Set the service fee applied to product sales.') : strings.subtitle} >
+        {section === 'data' && <DataBrowser language={language} />}
+        {section === 'users' && <UserGroups language={language} />}
         {problem && <Alert tone="danger" role="alert">{problem}</Alert>}
         {notice && <Alert tone="success">{notice}</Alert>}
         <fieldset className="workspace-form-group" disabled={busy}>
@@ -95,6 +99,7 @@ export function AdminPage({ t, language, section }: { t: Copy; language: Languag
 { href: '#/admin/tickets', title: t.supportPage.tickets, description: language === 'zh' ? '查看问题并回复用户' : 'Review questions and reply to customers', count: tickets.filter((ticket) => ticket.status === 'open').length },
 { href: '#/admin/reports', title: strings.reports, description: strings.reportsHint, count: openReports.length },
 { href: '#/admin/payouts', title: strings.withdrawals, description: strings.withdrawalsHint, count: studio.withdrawals.filter((item) => item.status === 'requested').length },
+{ href: '#/admin/data', title: language === 'zh' ? '数据浏览' : 'Data browser', description: language === 'zh' ? '搜索和查阅数据库中的业务数据' : 'Browse and search server records' },
 { href: '#/admin/settings', title: language === 'zh' ? '平台设置' : 'Platform settings', description: strings.feeHint(studio.platformFeePercent) }
 ]} /></Panel>
         </>}

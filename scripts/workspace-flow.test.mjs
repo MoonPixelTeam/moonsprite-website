@@ -104,7 +104,11 @@ test('workspace deep links preserve page ownership, access gates and admin navig
     await act(async () => { document.querySelector('.page-head-actions button').click() })
     assert.equal(document.querySelector('textarea'), null)
     await render('#/studio/publish')
-    assert.equal(document.querySelectorAll('.studio-fieldset').length, 5)
+    // JSDOM has no IndexedDB; the real browser wizard is covered by test:publish.
+    assert.ok(document.body.textContent.includes('无法恢复草稿或原文件'), 'storage failure is explicit and does not overwrite an unread draft')
+    assert.deepEqual(parseHash('#/studio/preview/new'), { page: 'studio-preview', subId: 'new' })
+    assert.deepEqual(parseHash('#/admin/data'), { page: 'admin', subId: 'data' })
+    assert.deepEqual(parseHash('#/admin/users'), { page: 'admin', subId: 'users' })
     assert.equal(document.querySelector('.panel .panel'), null, 'publishing groups are siblings, not nested panels')
     await render('#/account')
     const sidebar = document.querySelector('.workspace-sidebar')
@@ -122,7 +126,7 @@ test('workspace deep links preserve page ownership, access gates and admin navig
     // Remount page to emulate an admin deep-link visit after unlocking.
     await render('#/account')
     await render('#/admin', 'en')
-    assert.equal(document.querySelectorAll('.workspace-task-list a').length, 5, 'overview exposes all five management tasks')
+    assert.equal(document.querySelectorAll('.workspace-task-list a').length, 6, 'overview exposes management tasks and data browser')
     for (const sub of ['/listings', '/tickets', '/reports', '/payouts', '/settings']) {
       await act(async () => { document.querySelector(`.workspace-nav a[href="#/admin${sub}"]`).click() })
       await flush()

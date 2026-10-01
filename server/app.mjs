@@ -1,3 +1,5 @@
+import { browseData } from './data-browser.mjs'
+import { roleGroups } from './roles.mjs'
 import { createServer } from 'node:http'
 import { randomUUID, randomInt } from 'node:crypto'
 import { isIP } from 'node:net'
@@ -330,6 +332,40 @@ export function createApplication(config, overrides = {}) {
           const result = put('withdrawal', { id: id('wd'), sellerId: account.id, amount: body.amount, status: 'requested', requestedAt: Date.now(), destination }, account.id)
           audit(account.id, 'withdrawal.requested', result.id); return result
         }); return json(res, withdrawal, 201)
+      }
+      if (method === 'GET' && path === '/api/admin/data') {
+        auth.requireAccount(req, 'admin')
+        res.setHeader('Cache-Control', 'no-store')
+        return json(res, browseData(db, url.searchParams))
+      }
+      if (method === 'GET' && path === '/api/admin/users') {
+        auth.requireAccount(req, 'admin')
+        return json(res, db.prepare('SELECT data FROM accounts ORDER BY email').all().map(row => {
+          const { id, name, email, roles, createdAt } = JSON.parse(row.data)
+          return { id, name, email, roles, createdAt }
+        }))
+      }
+      const userRoleMatch = path.match(/^\/api\/admin\/users\/([^/]+)\/role$/)
+      if (method === 'PATCH' && userRoleMatch) {
+        const actor = auth.requireAccount(req, 'admin')
+        requireValue(Object.hasOwn(roleGroups, body.role), 'role')
+        const target = userRoleMatch[1]
+        requireValue(actor.id !== target, 'cannot-change-self', 409)
+        const account = transaction(() => {
+          const row = db.prepare('SELECT data FROM accounts WHERE id=?').get(target)
+          requireValue(row, 'missing', 404)
+          const account = JSON.parse(row.data)
+          if (account.roles.includes('admin') && body.role !== 'admin') {
+            const admins = db.prepare('SELECT data FROM accounts').all().filter(row => JSON.parse(row.data).roles.includes('admin'))
+            requireValue(admins.length > 1, 'last-admin', 409)
+          }
+          account.roles = roleGroups[body.role]
+          db.prepare('UPDATE accounts SET data=? WHERE id=?').run(JSON.stringify(account), target)
+          db.prepare('DELETE FROM sessions WHERE account_id=?').run(target)
+          store.audit(actor.id, 'role.changed', target)
+          return account
+        })
+        return json(res, account)
       }
       if (method === 'GET' && path === '/api/admin/withdrawals') { auth.requireAccount(req, 'admin'); return json(res, list('withdrawal')) }
       const withdrawalMatch = path.match(/^\/api\/admin\/withdrawals\/([^/]+)$/)

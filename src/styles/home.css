@@ -177,6 +177,7 @@
 /* Platform availability is visible before the feature tour. */
 .download-platforms { padding-block: var(--space-20); background: var(--bg); }
 .download-platforms h2 { margin: 0 0 var(--space-10); text-align: center; color: var(--text); font-size: var(--font-h2); }
+.download-platforms-description { margin: calc(-1 * var(--space-5)) 0 var(--space-10); text-align: center; color: var(--text-3); font-size: var(--font-small); }
 .download-platform-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-7); }
 .download-platform { display: flex; align-items: center; gap: var(--space-6); min-width: 0; padding: var(--space-7); border: 1px solid var(--border); background: var(--panel); color: var(--text-3); text-align: left; text-decoration: none; font: inherit; }
 .download-platform:disabled { opacity: 1; cursor: not-allowed; }

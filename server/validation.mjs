@@ -43,6 +43,13 @@ function sheet(value) {
   }
   result.sources = array(value.sources, 64, image)
   requireValue(result.sources.length === result.frames, 'animation')
+  if (value.durations !== undefined) {
+    result.durations = array(value.durations, 64, duration => {
+      requireValue(Number.isInteger(duration) && duration > 0 && duration <= 60000, 'animation')
+      return duration
+    })
+    requireValue(result.durations.length === result.frames && result.durations.reduce((sum, duration) => sum + duration, 0) === result.duration, 'animation')
+  }
   return result
 }
 export function listing(input) {
@@ -69,7 +76,18 @@ export function listing(input) {
     const labels = Object.fromEntries(order.map(id => [id, text(source.labels?.[id], 'animation', 60, 1)]))
     const idle = Object.values(sheets).find(item => item.dir === source.idle?.dir)
     requireValue(idle, 'animation')
-    result.animations = { order, sheets, labels, idle }
+    const triggers = array(source.triggers ?? [], 100, value => {
+      requireValue(value && order.includes(value.id), 'animation')
+      const trigger = { id: value.id, event: string(value.event, 'animation', 1, 100) }
+      if (value.repeat !== undefined) { requireValue(typeof value.repeat === 'boolean', 'animation'); trigger.repeat = value.repeat }
+      if (value.tool !== undefined) trigger.tool = string(value.tool, 'animation', 0, 100)
+      for (const field of ['cooldownMs', 'idleSeconds']) if (value[field] !== undefined) {
+        requireValue(Number.isFinite(value[field]) && value[field] >= 0 && value[field] <= 3600000, 'animation')
+        trigger[field] = value[field]
+      }
+      return trigger
+    })
+    result.animations = { order, sheets, labels, idle, triggers }
   }
   requireValue(JSON.stringify(result).length <= 3_000_000, 'size')
   return result

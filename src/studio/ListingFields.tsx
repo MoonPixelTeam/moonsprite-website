@@ -19,7 +19,9 @@ async function readImage(file: File): Promise<string> {
   })
 }
 
-export function ListingFields({ value, onChange, category, products, language, onBusy }: {
+export function ListingFields({ value, onChange, category, products, language, onBusy, section = 'all', locale = 'zh' }: {
+  section?: 'contents' | 'media' | 'all'
+  locale?: Language
   value: ListingDetails
   onChange: (value: ListingDetails) => void
   category: string
@@ -54,7 +56,7 @@ export function ListingFields({ value, onChange, category, products, language, o
         const id = crypto.randomUUID()
         const sheet = { dir: id, sources, frames: sources.length, frameWidth: first.width, frameHeight: first.height, duration }
         const previous = value.animations
-        update({ animations: { order: [...(previous?.order ?? []), id], sheets: { ...previous?.sheets, [id]: sheet }, labels: { ...previous?.labels, [id]: { zh: animationName.trim(), en: animationName.trim() } }, idle: previous?.idle ?? sheet } })
+        update({ animations: { ...previous, order: [...(previous?.order ?? []), id], sheets: { ...previous?.sheets, [id]: sheet }, labels: { ...previous?.labels, [id]: { zh: animationName.trim(), en: animationName.trim() } }, idle: previous?.idle ?? sheet } })
         setAnimationName('')
       } else update({ previews: [...(value.previews ?? []), ...sources] })
     } catch {
@@ -62,11 +64,10 @@ export function ListingFields({ value, onChange, category, products, language, o
     } finally { setBusy(false); onBusy(false) }
   }
   return <>
-    <Panel title={zh ? '包含内容' : 'Included contents'}>
+    {section !== 'media' && <><Panel title={zh ? '包含内容' : 'Included contents'}>
       <p className="studio-hint">{zh ? '逐项填写交付内容；会显示在详情页的内容清单中。' : 'List what buyers receive. These items appear on the detail page.'}</p>
       {(value.includes ?? []).map((item, index) => <div className="studio-listing-row" key={index}>
-        <Field label={`${zh ? '内容' : 'Item'} ${index + 1}`}><Input maxLength={160} value={item.zh} onChange={(event) => update({ includes: value.includes?.map((entry, i) => i === index ? { ...entry, zh: event.target.value } : entry) })} /></Field>
-        <Field label="English"><Input maxLength={160} value={item.en} onChange={(event) => update({ includes: value.includes?.map((entry, i) => i === index ? { ...entry, en: event.target.value } : entry) })} /></Field>
+        <Field label={`${zh ? '内容' : 'Item'} ${index + 1}`}><Input maxLength={160} value={item[locale]} onChange={(event) => update({ includes: value.includes?.map((entry, i) => i === index ? { ...entry, [locale]: event.target.value } : entry) })} /></Field>
         <Button size="compact" onClick={() => update({ includes: value.includes?.filter((_, i) => i !== index) })}>{zh ? '移除' : 'Remove'}</Button>
       </div>)}
       <Button size="compact" disabled={(value.includes?.length ?? 0) >= 30} onClick={() => update({ includes: [...(value.includes ?? []), { zh: '', en: '' }] })}>{zh ? '添加内容项' : 'Add item'}</Button>
@@ -76,7 +77,8 @@ export function ListingFields({ value, onChange, category, products, language, o
       {products.filter((product) => product.category !== 'bundles').map((product) => <Checkbox key={product.id} label={product.name[language]} checked={value.packs?.includes(product.id) ?? false} onChange={(checked) => update({ packs: checked ? [...(value.packs ?? []), product.id] : value.packs?.filter((id) => id !== product.id) })} />)}
       {products.every((product) => product.category === 'bundles') && <p>{zh ? '请先发布至少一个独立资源包。' : 'Publish an individual pack first.'}</p>}
     </Panel>}
-    <Panel title={zh ? '详情预览图' : 'Detail images'}>
+    </>}
+    {section !== 'contents' && <><Panel title={zh ? '详情预览图' : 'Detail images'}>
       <FileField label={zh ? '添加图片（最多 6 张）' : 'Add images (up to 6)'} hint={zh ? '与卡片封面独立；未添加时使用封面。PNG / JPG / WebP / GIF，每张不超过 512 KB。' : 'Separate from the card cover; falls back to the cover. PNG / JPG / WebP / GIF, up to 512 KB each.'} file={null} multiple disabled={busy} accept="image/png,image/jpeg,image/webp,image/gif" onPickMany={(files) => { void upload(files) }} emptyTitle={zh ? '选择预览图片' : 'Choose preview images'} emptyHint={zh ? '可多选或拖入图片' : 'Select or drop multiple images'} replaceLabel={zh ? '更换' : 'Replace'} clearLabel={zh ? '移除' : 'Remove'} />
       <div className="studio-listing-images">{value.previews?.map((src, index) => <div key={index}>
         <img src={src} alt={`${zh ? '预览' : 'Preview'} ${index + 1}`} />
@@ -91,18 +93,18 @@ export function ListingFields({ value, onChange, category, products, language, o
       <FileField label={zh ? '添加一组动画帧' : 'Add animation frames'} file={null} multiple disabled={busy} accept="image/png,image/webp" onPickMany={(files) => { void upload(files, true) }} emptyTitle={zh ? '选择动画帧' : 'Choose animation frames'} emptyHint={zh ? '可多选或拖入 PNG / WebP 图片' : 'Select or drop PNG / WebP frames'} replaceLabel={zh ? '更换' : 'Replace'} clearLabel={zh ? '移除' : 'Remove'} />
       {value.animations?.order.map((id) => <div className="studio-listing-row" key={id}>
         <PetSpriteStrip sheet={value.animations!.sheets[id]} />
-        <Field label={zh ? '名称' : 'Name'}><Input value={value.animations!.labels[id].zh} maxLength={60} disabled={busy} onChange={(event) => update({ animations: { ...value.animations!, labels: { ...value.animations!.labels, [id]: { ...value.animations!.labels[id], zh: event.target.value } } } })} /></Field>
-        <Field label="English"><Input value={value.animations!.labels[id].en} maxLength={60} disabled={busy} onChange={(event) => update({ animations: { ...value.animations!, labels: { ...value.animations!.labels, [id]: { ...value.animations!.labels[id], en: event.target.value } } } })} /></Field>
+        <Field label={zh ? '名称' : 'Name'}><Input value={value.animations!.labels[id][locale]} maxLength={60} disabled={busy} onChange={(event) => update({ animations: { ...value.animations!, labels: { ...value.animations!.labels, [id]: { ...value.animations!.labels[id], [locale]: event.target.value } } } })} /></Field>
         <Button size="compact" disabled={busy || value.animations!.idle.dir === value.animations!.sheets[id].dir} onClick={() => update({ animations: { ...value.animations!, idle: value.animations!.sheets[id] } })}>{zh ? '设为默认' : 'Use as default'}</Button>
         <Button size="compact" disabled={busy} onClick={() => {
           const current = value.animations!
           const order = current.order.filter((key) => key !== id)
           const sheets = { ...current.sheets }; delete sheets[id]
           const labels = { ...current.labels }; delete labels[id]
-          update({ animations: order.length ? { order, sheets, labels, idle: current.idle.dir === current.sheets[id].dir ? sheets[order[0]] : current.idle } : undefined })
+          update({ animations: order.length ? { ...current, triggers: current.triggers?.filter(trigger => trigger.id !== id), order, sheets, labels, idle: current.idle.dir === current.sheets[id].dir ? sheets[order[0]] : current.idle } : undefined })
         }}>{zh ? '移除' : 'Remove'}</Button>
       </div>)}
     </Panel>}
+    </>}
     {error && <Alert tone="danger" role="alert">{error}</Alert>}
   </>
 }

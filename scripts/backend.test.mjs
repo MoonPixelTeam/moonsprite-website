@@ -219,3 +219,88 @@ test('missing callbacks can be reconciled with the provider and mismatched respo
   assert.equal((await buyer(`/orders/${order.id}/reconcile`, 'POST')).data.status, 'paid')
   assert.equal((await buyer('/orders')).data.length, 1)
 })
+
+test('role groups: inheritance, administrator assignment, session revocation and self protection', async t => {
+  const f = await fixture(t)
+  const { call: admin, account: adminAccount } = await f.register('groups-admin@example.com', ['admin'])
+  const { call: buyer, account: buyerAccount } = await f.register('groups-user@example.com')
+  assert.equal((await buyer('/admin/users')).status, 403)
+  assert.equal((await buyer(`/admin/users/${buyerAccount.id}/role`, 'PATCH', { role: 'admin' })).status, 403)
+  assert.equal((await admin('/admin/users')).status, 200)
+  assert.equal((await admin(`/admin/users/${adminAccount.id}/role`, 'PATCH', { role: 'buyer' })).status, 409)
+  assert.equal((await admin(`/admin/users/${buyerAccount.id}/role`, 'PATCH', { role: 'root' })).status, 400)
+  const promoted = await admin(`/admin/users/${buyerAccount.id}/role`, 'PATCH', { role: 'creator' })
+  assert.equal(promoted.status, 200)
+  assert.deepEqual(promoted.data.roles, ['buyer', 'creator'])
+  assert.equal((await buyer('/auth/session')).data, null)
+  await buyer('/auth/sign-in', 'POST', { email: 'groups-user@example.com', password })
+  assert.equal((await buyer('/orders')).status, 200)
+  assert.equal((await buyer('/studio/products', 'POST', productInput())).status, 201)
+  assert.equal((await buyer('/admin/users')).status, 403)
+  assert.equal((await admin('/studio/products', 'POST', productInput())).status, 201)
+  assert.equal((await admin(`/admin/users/${buyerAccount.id}/role`, 'PATCH', { role: 'buyer' })).status, 200)
+  assert.equal((await buyer('/auth/session')).data, null)
+  await buyer('/auth/sign-in', 'POST', { email: 'groups-user@example.com', password })
+  assert.equal((await buyer('/studio/products', 'POST', productInput())).status, 403)
+})
+
+
+test('pet listing retains frame timings and interaction triggers and rejects broken references', async t => {
+  const f = await fixture(t)
+  const { call: seller } = await f.register('pet-seller@example.com', ['creator'])
+  const sheet = { dir: 'imported-idle', sources: ['data:image/png;base64,AA==', 'data:image/png;base64,AA=='], frames: 2, frameWidth: 16, frameHeight: 16, duration: 300, durations: [100, 200] }
+  const triggers = [{ id: 'IDLE', event: 'pet.drag-start', repeat: false, cooldownMs: 1000, idleSeconds: 5, tool: '' }]
+  const input = { ...productInput(0), animations: { order: ['IDLE'], sheets: { IDLE: sheet }, labels: { IDLE: { zh: '待机', en: 'Idle' } }, idle: sheet, triggers } }
+  const created = await seller('/studio/products', 'POST', input)
+  assert.equal(created.status, 201)
+  assert.deepEqual(created.data.animations.sheets.IDLE.durations, [100, 200])
+  assert.deepEqual(created.data.animations.triggers, triggers)
+  input.animations.triggers[0].id = 'missing'
+  assert.equal((await seller('/studio/products', 'POST', input)).status, 400)
+  input.animations.triggers[0].id = 'IDLE'
+  input.animations.sheets.IDLE.durations = [100]
+  assert.equal((await seller('/studio/products', 'POST', input)).status, 400)
+})
+
+
+test('admin data browser: safe projections, search, filters, pagination and read-only access', async t => {
+  const f = await fixture(t)
+  const { call: admin } = await f.register('browser-admin@example.com', ['admin'])
+  const { call: merchant } = await f.register('browser-merchant@example.com', ['creator'])
+  const { call: buyer, account } = await f.register('browser-buyer@example.com')
+  assert.equal((await f.client()('/admin/data')).status, 401)
+  assert.equal((await merchant('/admin/data')).status, 403)
+  assert.equal((await buyer('/admin/data')).status, 403)
+  const db = f.store().db
+  for (let i = 0; i < 30; i++) f.store().put('ticket', { id: `ticket-${i}`, subject: `Support ${i}`, message: i === 0 ? 'literal % search' : 'Message', accountId: account.id, status: i % 2 ? 'answered' : 'open', createdAt: 1000 + i }, account.id)
+  const page1 = await admin('/admin/data?dataset=tickets')
+  assert.equal(page1.status, 200)
+  assert.equal(page1.headers.get('cache-control'), 'no-store')
+  assert.equal(page1.data.total, 30)
+  assert.equal(page1.data.rows.length, 25)
+  const page2 = await admin('/admin/data?dataset=tickets&page=2')
+  assert.equal(page2.data.rows.length, 5)
+  assert.ok(!page1.data.rows.some(row => page2.data.rows.some(other => other.id === row.id)))
+  assert.equal((await admin('/admin/data?dataset=tickets&status=open')).data.total, 15)
+  assert.equal((await admin('/admin/data?dataset=tickets&q=%25')).data.total, 1)
+  assert.equal((await admin('/admin/data?dataset=tickets&q=absent&page=10')).data.page, 1)
+  const product = await publish(merchant, admin, 0)
+  await buyer('/orders', 'POST', { lines: [{ id: product.id, quantity: 1 }] })
+  f.store().put('withdrawal', { id: 'wd-browse', amount: 12, status: 'requested', destination: 'private-payment-account', requestedAt: 3000 }, account.id)
+  for (const dataset of ['users', 'products', 'orders', 'withdrawals', 'files', 'events']) {
+    const result = await admin('/admin/data?dataset=' + dataset)
+    assert.equal(result.status, 200, dataset)
+    assert.ok(result.data.rows.length > 0, dataset)
+    assert.ok(result.data.rows.every(row => Object.keys(row).every(key => result.data.columns.some(col => col.key === key))))
+    assert.ok(!JSON.stringify(result.data).includes('private-payment-account'))
+    assert.ok(!JSON.stringify(result.data).includes('password'))
+  }
+  assert.equal((await admin('/admin/data?dataset=products&status=approved')).data.rows[0].price, 0)
+  assert.equal((await admin('/admin/data?dataset=orders')).data.rows[0].amount, 0)
+  assert.equal((await admin('/admin/data?dataset=users&status=creator')).data.total, 1)
+  const hash = db.prepare('SELECT password FROM accounts WHERE id=?').get(account.id).password
+  assert.equal((await admin('/admin/data?dataset=users&q=' + encodeURIComponent(hash))).data.total, 0)
+  for (const query of ['dataset=sessions', 'dataset=__proto__', 'dataset=accounts', 'page=-1', 'page=1.5', 'status=unknown', "dataset=users%27%3BDELETE%20FROM%20accounts"]) assert.equal((await admin('/admin/data?' + query)).status, 400)
+  assert.equal((await admin('/admin/data', 'POST', { sql: 'DELETE FROM accounts' })).status, 404)
+  assert.equal(db.prepare('SELECT count(*) AS n FROM accounts').get().n, 3)
+})

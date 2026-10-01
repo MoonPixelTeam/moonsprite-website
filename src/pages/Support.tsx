@@ -26,6 +26,19 @@ export function SupportPage({ t, language }: { t: Copy; language: Language }) {
   const [problem, setProblem] = useState<string | null>(null)
   const [sent, setSent] = useState(false)
 
+  const presets = language === 'zh' ? [
+    ['下载或安装问题', '资源名称：\n软件版本：\n操作系统：\n错误提示：\n已尝试的操作：'],
+    ['付款与订单问题', '问题类型（未到账 / 重复付款 / 其他）：\n付款时间：\n实际情况：'],
+    ['资源异常', '资源名称：\n软件版本：\n复现步骤：\n预期结果：\n实际结果：'],
+    ['退款申请', '资源名称：\n申请原因：\n问题说明：'],
+    ['功能建议', '使用场景：\n当前遇到的困难：\n期望的改进：'],
+  ] : [
+    ['Download or installation', 'Resource name:\nApp version:\nOperating system:\nError:\nSteps tried:'],
+    ['Payment or order', 'Issue type:\nPayment time:\nWhat happened:'],
+    ['Resource issue', 'Resource name:\nApp version:\nSteps to reproduce:\nExpected:\nActual:'],
+    ['Refund request', 'Resource name:\nReason:\nDetails:'],
+    ['Feature suggestion', 'Use case:\nCurrent difficulty:\nSuggested improvement:'],
+  ]
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (busy) return
@@ -61,6 +74,13 @@ export function SupportPage({ t, language }: { t: Copy; language: Language }) {
         <Panel title={strings.ticket} className="workspace-setting-section">
           <p className="panel-copy">{strings.ticketBody}</p>
           <form className="settings-form" onSubmit={submit}>
+            <Field label={language === 'zh' ? '常用工单模板' : 'Ticket templates'}>
+              <div className="support-presets">{presets.map(([title, template]) => <Button key={title} type="button" size="compact" disabled={busy || message.includes(template) || message.length + template.length + (message ? 2 : 0) > 1000} onClick={() => {
+                setSubject(current => current || title)
+                setMessage(current => current ? current + '\n\n' + template : template)
+              }}>{title}</Button>)}</div>
+              <small>{language === 'zh' ? '模板会保留已输入的内容，请补充具体信息后提交。不要填写密码或完整支付账号。' : 'Templates preserve your text. Fill in the details; never include passwords or full payment credentials.'}</small>
+            </Field>
             <Field label={strings.ticketSubject}>
               <Input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={80} />
             </Field>

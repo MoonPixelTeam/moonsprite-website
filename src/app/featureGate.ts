@@ -109,6 +109,7 @@ const ROUTE_FEATURES: Partial<Record<Route['page'], SiteFeature>> = {
   purchases: 'account',
   studio: 'account',
   'studio-publish': 'account',
+  'studio-preview': 'account',
   'studio-sales-order': 'account',
   receipt: 'account',
   orders: 'account',

@@ -1,3 +1,4 @@
+import { roleGroups } from './roles.mjs'
 import { randomUUID } from 'node:crypto'
 import { configuration } from './config.mjs'
 import { openDatabase } from './database.mjs'
@@ -20,7 +21,7 @@ try {
     requireValue(['buyer', 'creator', 'admin'].includes(role), 'role')
     const row = store.db.prepare('SELECT data FROM accounts WHERE email=?').get(address); requireValue(row, 'missing', 404)
     const account = JSON.parse(row.data)
-    account.roles = role === 'admin' ? ['buyer', 'creator', 'admin'] : role === 'creator' ? ['buyer', 'creator'] : ['buyer']
+    account.roles = roleGroups[role]
     store.db.prepare('UPDATE accounts SET data=? WHERE id=?').run(JSON.stringify(account), account.id)
     store.db.prepare('DELETE FROM sessions WHERE account_id=?').run(account.id)
     store.audit('cli', 'role.changed', account.id)
