@@ -858,7 +858,7 @@ Invoke-RestMethod -Uri "$apiBase/orders" -WebSession $apiSession
 
 `POST /auth/register` 现在必须携带 name、email、password、code。验证码绑定标准化后的邮箱，10 分钟内有效，最多尝试 5 次，新验证码替换旧验证码；缺失、错误、过期或次数耗尽返回 400/registration-code。注册成功自动建立会话，Account.emailVerified=true，验证码在同一事务中被消费。邮箱仅在注册时验证；账号设置展示绑定邮箱，不提供修改或发送验证邮件操作。旧 `/auth/email/verify` 接口返回 410/registration-verification-only；通过 profile 接口修改邮箱返回 409/email-change-disabled。历史账号不会被自动标记为已验证。
 
-数据库自动新增 registration_codes 表，保存带随机盐的验证码摘要，不保存明文验证码。每邮箱每分钟 1 次、每小时 5 次，每 IP 每小时 10 次发送。生产服务器必须配置可用 SMTP；浏览器演示模式仍为本地模拟注册，不发送邮件。
+数据库自动新增 registration_codes 表，保存带随机盐的验证码摘要，不保存明文验证码。注册与找回密码共用邮箱额度：成功提交后冷却 60 秒，每小时最多 10 次；SMTP 失败不扣邮箱小时额度，冷却 30 秒。独立 IP 请求限制为每小时 30 次，失败和被拒请求仍受 IP 保护。限流响应通过 Retry-After 头和 error.retryAfter 返回实际剩余秒数，被拦截不会增加该限流项计数或延长期限。找回密码对不存在的账号继续返回通用响应并模拟成功额度，避免泄露账号是否存在。新邮件限流使用独立版本键，不沿用旧邮件配额。生产服务器必须配置可用 SMTP；浏览器演示模式仍为本地模拟注册，不发送邮件。
 
 
 ### 密码重置改用验证码
