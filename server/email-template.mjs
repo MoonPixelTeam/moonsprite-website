@@ -14,7 +14,8 @@ export function verificationEmail({ to, code, purpose, publicOrigin }) {
   const subject = registering ? 'MoonSprite 注册验证码' : 'MoonSprite 重置密码验证码'
   const website = escape(origin + '/')
   const help = escape(origin + '/#/faq')
-  return { to, subject,
+  // Tencent SES requires Base64 body parts; Nodemailer's automatic choice can be quoted-printable for HTML.
+  return { to, subject, textEncoding: 'base64',
     attachments: [{ filename: 'moonsprite-wordmark.png', path: fileURLToPath(new URL('../public/assets/moonsprite-wordmark.png', import.meta.url)), cid: 'moonsprite-wordmark', contentDisposition: 'inline' }],
     text: `${title}\n${subtitle}\n\n${description}\n\n验证码：${code}\n\n10 分钟内有效，仅用于本次${registering ? '注册' : '密码重置'}。重新获取后，请使用最新的验证码。\n${note}\n\n请勿向任何人透露验证码，MoonSprite 不会主动向你索取验证码或密码。若非本人操作，请忽略此邮件。\n\n此邮件由系统自动发送，请勿直接回复。\nMoonSprite 官网：${origin}/\n帮助中心：${origin}/#/faq`,
     html: `<!doctype html>
