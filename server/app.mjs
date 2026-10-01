@@ -1,3 +1,4 @@
+import { verificationEmail } from './email-template.mjs'
 import { browseData } from './data-browser.mjs'
 import { roleGroups } from './roles.mjs'
 import { createServer } from 'node:http'
@@ -15,6 +16,9 @@ const json = (res, value, status = 200) => { res.writeHead(status, { 'Content-Ty
 const empty = res => { res.writeHead(204); res.end() }
 const plain = (res, value, status = 200) => { res.writeHead(status, { 'Content-Type': 'text/plain; charset=utf-8' }); res.end(value) }
 function html(res, title, content, formOrigin = "'self'") {
+  // Native form POSTs need their same-origin Origin header. no-referrer can
+  // make browsers send Origin: null; retain no referrer on external links.
+  res.setHeader('Referrer-Policy', 'same-origin')
   res.setHeader('Content-Security-Policy', `default-src 'none'; style-src 'unsafe-inline'; form-action ${formOrigin}; frame-ancestors 'none'; base-uri 'none'`)
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
   res.end(`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escape(title)} · MoonSprite</title><body style="font:16px system-ui;max-width:640px;margin:12vh auto;padding:24px;line-height:1.8"><h1>${escape(title)}</h1>${content}<p><a href="/">返回 MoonSprite</a></p></body></html>`)
@@ -92,22 +96,6 @@ export function createApplication(config, overrides = {}) {
     return { gross: grossCents / 100, platformFee: feeCents / 100, net: (grossCents - feeCents) / 100, withdrawn: withdrawnCents / 100,
       available: (grossCents - feeCents - withdrawnCents) / 100, sales: sales.map(({ feeCents, ...line }) => line), withdrawals }
   }
-  async function sendToken(account, kind) {
-    rateLimit(`mail:${account.id}`, 5, 3600000)
-    const token = randomToken()
-    db.prepare('DELETE FROM tokens WHERE account_id=? AND kind=?').run(account.id, kind)
-    db.prepare('INSERT INTO tokens VALUES(?,?,?,?,?)').run(hashToken(token), account.id, kind, account.email, Date.now() + 3600000)
-    const link = `${config.publicOrigin}/api/auth/${kind === 'reset' ? 'password/reset' : 'email/verify'}?token=${token}`
-    try { await sendMail({ to: account.email, subject: kind === 'reset' ? '重置 MoonSprite 密码' : '验证 MoonSprite 邮箱', text: `请打开以下链接完成操作（1 小时内有效）：\n${link}\n如果不是你本人操作，请忽略此邮件。` }) }
-    catch (error) { db.prepare('DELETE FROM tokens WHERE token=?').run(hashToken(token)); throw new HttpError(503, 'mail-unavailable') }
-  }
-  const getToken = (token, kind) => {
-    requireValue(typeof token === 'string' && /^[a-f0-9]{64}$/.test(token), 'token')
-    const row = db.prepare('SELECT * FROM tokens WHERE token=? AND kind=? AND expires>?').get(hashToken(token), kind, Date.now())
-    requireValue(row && accountRow(row.account_id)?.email === row.email, 'token')
-    return row
-  }
-
   const server = createServer(async (req, res) => {
     res.setHeader('Cache-Control', 'no-store')
     res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -143,13 +131,42 @@ export function createApplication(config, overrides = {}) {
       }
       if (method === 'GET' && path === '/api/health') return json(res, { ok: true })
       if (method === 'GET' && path === '/api/auth/session') return json(res, auth.current(req))
+      if (method === 'POST' && path === '/api/auth/register/code') {
+        const address = email(body.email)
+        rateLimit(`register-mail-ip:${clientIp}`, 10, 3600000)
+        rateLimit(`register-mail-hour:${hashToken(address)}`, 5, 3600000)
+        rateLimit(`register-mail-minute:${hashToken(address)}`, 1, 60000)
+        requireValue(!db.prepare('SELECT 1 FROM accounts WHERE email=?').get(address), 'exists', 409)
+        const code = String(randomInt(0, 1000000)).padStart(6, '0')
+        const salt = randomToken()
+        const digest = `${salt}:${hashToken(`${salt}:${address}:${code}`)}`
+        db.prepare('DELETE FROM registration_codes WHERE expires <= ?').run(Date.now())
+        db.prepare('INSERT INTO registration_codes VALUES(?,?,?,0) ON CONFLICT(email) DO UPDATE SET digest=excluded.digest,expires=excluded.expires,attempts=0').run(address, digest, Date.now() + 600000)
+        try { await sendMail(verificationEmail({ to: address, code, purpose: 'register', publicOrigin: config.publicOrigin })) }
+        catch { db.prepare('DELETE FROM registration_codes WHERE email=? AND digest=?').run(address, digest); throw new HttpError(503, 'mail-unavailable') }
+        return json(res, { retryAfter: 60, expiresIn: 600 })
+      }
       if (method === 'POST' && path === '/api/auth/register') {
         const address = email(body.email); const name = string(body.name, 'name', 1, 40)
-        const hashed = await hashPassword(password(body.password))
+        const suppliedPassword = password(body.password)
         requireValue(!db.prepare('SELECT 1 FROM accounts WHERE email=?').get(address), 'exists', 409)
-        const account = { id: id('usr'), email: address, name, roles: ['buyer'], createdAt: Date.now(), emailVerified: false }
-        db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run(account.id, address, hashed, JSON.stringify(account))
-        auth.start(req, res, account)
+        const codeRow = db.prepare('SELECT * FROM registration_codes WHERE email=?').get(address)
+        requireValue(codeRow && codeRow.expires > Date.now() && codeRow.attempts < 5, 'registration-code')
+        const salt = codeRow.digest.split(':')[0]
+        if (typeof body.code !== 'string' || !/^\d{6}$/.test(body.code) || codeRow.digest !== `${salt}:${hashToken(`${salt}:${address}:${body.code}`)}`) {
+          db.prepare('UPDATE registration_codes SET attempts=attempts+1 WHERE email=?').run(address)
+          throw new HttpError(400, 'registration-code')
+        }
+        const hashed = await hashPassword(suppliedPassword)
+        const account = { id: id('usr'), email: address, name, roles: ['buyer'], createdAt: Date.now(), emailVerified: true }
+        transaction(() => {
+          requireValue(!db.prepare('SELECT 1 FROM accounts WHERE email=?').get(address), 'exists', 409)
+          const current = db.prepare('SELECT * FROM registration_codes WHERE email=?').get(address)
+          requireValue(current && current.digest === codeRow.digest && current.expires > Date.now() && current.attempts < 5, 'registration-code')
+          db.prepare('INSERT INTO accounts VALUES(?,?,?,?)').run(account.id, address, hashed, JSON.stringify(account))
+          db.prepare('DELETE FROM registration_codes WHERE email=?').run(address)
+          auth.start(req, res, account)
+        })
         return json(res, account, 201)
       }
       if (method === 'POST' && path === '/api/auth/sign-in') {
@@ -164,11 +181,7 @@ export function createApplication(config, overrides = {}) {
       if (method === 'PATCH' && path === '/api/auth/profile') {
         const account = auth.requireAccount(req)
         if ('name' in body) account.name = string(body.name, 'name', 1, 40)
-        if ('email' in body) {
-          const next = email(body.email)
-          requireValue(!db.prepare('SELECT 1 FROM accounts WHERE email=? AND id<>?').get(next, account.id), 'taken', 409)
-          if (next !== account.email) { account.email = next; account.emailVerified = false; db.prepare('DELETE FROM tokens WHERE account_id=?').run(account.id) }
-        }
+        if ('email' in body) requireValue(email(body.email) === account.email, 'email-change-disabled', 409)
         saveAccount(account); return json(res, account)
       }
       if (method === 'POST' && path === '/api/auth/password') {
@@ -184,38 +197,47 @@ export function createApplication(config, overrides = {}) {
           auth.start(req, res, account)
         }); return empty(res)
       }
-      if (['/api/auth/password/reset', '/api/auth/email/verify'].includes(path)) {
-        const kind = path.includes('password') ? 'reset' : 'verify'
-        if (method === 'GET') {
-          const token = url.searchParams.get('token'); getToken(token, kind)
-          return html(res, kind === 'reset' ? '设置新密码' : '验证邮箱', `<form method="post"><input type="hidden" name="token" value="${escape(token)}">${kind === 'reset' ? '<label>新密码 <input name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" required></label>' : '<p>点击确认完成邮箱验证。</p>'}<button type="submit">确认</button></form>`)
+      if (path === '/api/auth/email/verify') throw new HttpError(410, 'registration-verification-only')
+      if (method === 'POST' && path === '/api/auth/password/reset/code') {
+        const address = email(body.email)
+        rateLimit(`reset-mail-ip:${clientIp}`, 10, 3600000)
+        rateLimit(`reset-mail-hour:${hashToken(address)}`, 5, 3600000)
+        rateLimit(`reset-mail-minute:${hashToken(address)}`, 1, 60000)
+        const row = db.prepare('SELECT id FROM accounts WHERE email=?').get(address)
+        if (row) {
+          const key = `reset:${row.id}`
+          const code = String(randomInt(0, 1000000)).padStart(6, '0'), salt = randomToken()
+          const digest = `${salt}:${hashToken(`${salt}:${address}:${code}`)}`
+          db.prepare('DELETE FROM registration_codes WHERE expires <= ?').run(Date.now())
+          db.prepare('INSERT INTO registration_codes VALUES(?,?,?,0) ON CONFLICT(email) DO UPDATE SET digest=excluded.digest,expires=excluded.expires,attempts=0').run(key, digest, Date.now() + 600000)
+          try { await sendMail(verificationEmail({ to: address, code, purpose: 'reset', publicOrigin: config.publicOrigin })) }
+          catch { db.prepare('DELETE FROM registration_codes WHERE email=? AND digest=?').run(key, digest) }
         }
-        if (method === 'POST' && body.token) {
-          const tokenRow = getToken(body.token, kind)
-          const hashed = kind === 'reset' ? await hashPassword(password(body.password)) : null
-          transaction(() => {
-            getToken(body.token, kind)
-            const account = JSON.parse(accountRow(tokenRow.account_id).data)
-            if (kind === 'reset') {
-              db.prepare('UPDATE accounts SET password=? WHERE id=?').run(hashed, account.id)
-              db.prepare('DELETE FROM sessions WHERE account_id=?').run(account.id)
-            } else { account.emailVerified = true; saveAccount(account) }
-            db.prepare('DELETE FROM tokens WHERE account_id=? AND kind=?').run(account.id, kind)
-            audit(account.id, `auth.${kind}`, account.id)
-          })
-          return html(res, '操作成功', '<p>已完成，请返回网站重新登录或刷新账户页面。</p><a href="/#/login">登录</a>')
+        return json(res, { retryAfter: 60, expiresIn: 600 })
+      }
+      if (method === 'POST' && path === '/api/auth/password/reset') {
+        const address = email(body.email), next = password(body.password)
+        const row = db.prepare('SELECT id FROM accounts WHERE email=?').get(address)
+        const key = `reset:${row?.id}`
+        const codeRow = db.prepare('SELECT * FROM registration_codes WHERE email=?').get(key)
+        requireValue(row && codeRow && codeRow.expires > Date.now() && codeRow.attempts < 5, 'reset-code')
+        const salt = codeRow.digest.split(':')[0]
+        if (typeof body.code !== 'string' || !/^\d{6}$/.test(body.code) || codeRow.digest !== `${salt}:${hashToken(`${salt}:${address}:${body.code}`)}`) {
+          db.prepare('UPDATE registration_codes SET attempts=attempts+1 WHERE email=?').run(key)
+          throw new HttpError(400, 'reset-code')
         }
-        if (method === 'POST') {
-          if (kind === 'verify') {
-            const account = auth.requireAccount(req)
-            if (!account.emailVerified) await sendToken(account, kind)
-            return json(res, account)
-          }
-          const row = db.prepare('SELECT data FROM accounts WHERE email=?').get(email(body.email))
-          // Same response for existing and unknown addresses, including delivery failures.
-          if (row) { try { await sendToken(JSON.parse(row.data), kind) } catch { /* private delivery failure */ } }
-          return empty(res)
-        }
+        const hashed = await hashPassword(next)
+        transaction(() => {
+          const current = db.prepare('SELECT * FROM registration_codes WHERE email=?').get(key)
+          requireValue(current && current.digest === codeRow.digest && current.expires > Date.now() && current.attempts < 5, 'reset-code')
+          requireValue(accountRow(row.id)?.email === address, 'reset-code')
+          db.prepare('UPDATE accounts SET password=? WHERE id=?').run(hashed, row.id)
+          db.prepare('DELETE FROM registration_codes WHERE email=?').run(key)
+          db.prepare('DELETE FROM sessions WHERE account_id=?').run(row.id)
+          db.prepare('DELETE FROM tokens WHERE account_id=?').run(row.id)
+          audit(row.id, 'auth.reset', row.id)
+        })
+        return empty(res)
       }
       if (method === 'DELETE' && path === '/api/auth/account') {
         const account = auth.requireAccount(req)

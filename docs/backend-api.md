@@ -850,3 +850,21 @@ Invoke-RestMethod -Uri "$apiBase/orders" -WebSession $apiSession
 `GET /admin/data?dataset=users&q=&status=&page=1`，仅管理员可访问。dataset 支持 users、products、orders、tickets、withdrawals、files、events。q 搜索该分类可见列（最长 200 字符），status 按接口返回的 statuses 筛选。每页 25 条，返回 columns、datasets、statuses、rows、total、page、pages、pageSize；页码超出范围时返回最后一页。无结果时返回第 1 页及空 rows。
 
 所有分类与列均由服务端固定定义，不接受 SQL、表名或列名输入。不会返回密码哈希、登录/验证令牌、收款账号或文件内容；文件分类仅显示元数据。响应禁用缓存。不提供写入接口。前端入口为 `#/admin/data`（平台管理 → 数据浏览），支持搜索、筛选、刷新、翻页和展开完整记录。金额列标注币种；订单使用下单时锁定的人民币金额。
+
+
+### 注册时验证邮箱
+
+先调用 `POST /auth/register/code`，请求 `{ "email": "user@example.com" }`，成功返回 `{ "retryAfter": 60, "expiresIn": 600 }`。邮件包含 6 位数字验证码。发送失败返回 503/mail-unavailable；频率限制返回 429；已注册邮箱返回 409/exists。
+
+`POST /auth/register` 现在必须携带 name、email、password、code。验证码绑定标准化后的邮箱，10 分钟内有效，最多尝试 5 次，新验证码替换旧验证码；缺失、错误、过期或次数耗尽返回 400/registration-code。注册成功自动建立会话，Account.emailVerified=true，验证码在同一事务中被消费。邮箱仅在注册时验证；账号设置展示绑定邮箱，不提供修改或发送验证邮件操作。旧 `/auth/email/verify` 接口返回 410/registration-verification-only；通过 profile 接口修改邮箱返回 409/email-change-disabled。历史账号不会被自动标记为已验证。
+
+数据库自动新增 registration_codes 表，保存带随机盐的验证码摘要，不保存明文验证码。每邮箱每分钟 1 次、每小时 5 次，每 IP 每小时 10 次发送。生产服务器必须配置可用 SMTP；浏览器演示模式仍为本地模拟注册，不发送邮件。
+
+
+### 密码重置改用验证码
+
+`POST /auth/password/reset/code` 接收 email，返回 retryAfter=60、expiresIn=600。为避免暴露账号是否存在，未知邮箱和投递失败均返回相同响应，不代表已实际送达。注册邮箱收到 6 位重置验证码；独立于注册验证码，有效期 10 分钟、最多 5 次尝试，并有邮箱/IP 发送频率限制。
+
+`POST /auth/password/reset` 接收 email、code、password。成功返回 204，同时原子消费验证码、撤销该账号全部会话。无效验证码返回 400/reset-code。旧邮件链接不再提供重置操作。登录页和账号设置复用验证码重置表单。
+
+本地 DEV_API_TARGET 指向线上时，验证码接口也由线上后端处理；404/missing 表示线上未部署新接口，配置本地前端不会更新服务器。

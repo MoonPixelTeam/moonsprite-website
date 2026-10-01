@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import type { Copy, Language } from '../content'
 import { useAccount } from '../account/store'
+import { ResetPassword } from '../account/ResetPassword'
 import { apiIsLocal } from '../api'
-import { Alert, Button, Disclosure, Field, Input, Panel, SettingsRow, StatusBadge, WorkspacePage } from '../ui'
+import { Alert, Button, Disclosure, Field, Input, Panel, SettingsRow, WorkspacePage } from '../ui'
 
 type Setting = 'name' | 'email' | 'password' | 'reset' | 'delete'
 type Result = { ok: true } | { ok: false; error: string }
@@ -10,12 +11,10 @@ type Result = { ok: true } | { ok: false; error: string }
 export function SettingsPage({ t, language }: { t: Copy; language: Language }) {
   const s = t.accountSettings
   const zh = language === 'zh'
-  const { account, updateName, updateEmail, changePassword, requestPasswordReset, verifyEmail, deleteAccount } = useAccount()
+  const { account, updateName, changePassword, deleteAccount } = useAccount()
   const [name, setName] = useState(account?.name ?? '')
-  const [email, setEmail] = useState(account?.email ?? '')
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
-  const [resetEmail, setResetEmail] = useState('')
   const [confirm, setConfirm] = useState('')
   const [pending, setPending] = useState<Setting | null>(null)
   const [feedback, setFeedback] = useState<{ setting: Setting; tone: 'success' | 'danger'; message: string } | null>(null)
@@ -53,19 +52,9 @@ export function SettingsPage({ t, language }: { t: Copy; language: Language }) {
           </form>
         </SettingsRow>
         <SettingsRow title={zh ? '邮箱地址' : 'Email address'} description={zh ? '用于登录、接收账户通知与找回密码。' : 'Used for sign-in, account notifications and password recovery.'}>
-          <form className="settings-form" onSubmit={(event) => {
-            event.preventDefault()
-            void run('email', () => updateEmail(email), zh ? '邮箱已保存。' : 'Email saved.', { taken: s.errorTaken, email: zh ? '请输入有效的邮箱地址。' : 'Enter a valid email address.' })
-          }}>
-            <Field label={zh ? '邮箱地址' : 'Email address'}><Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required /></Field>
-            <div className="settings-email-state"><StatusBadge tone={account.emailVerified ? 'success' : 'warning'}>{account.emailVerified ? s.emailVerified : s.emailUnverified}</StatusBadge><span>{zh ? '当前登录邮箱' : 'Current sign-in email'}: {account.email}</span></div>
-            <div className="settings-actions">
-              <Button type="submit" disabled={email === account.email}>{saving('email', zh ? '保存邮箱' : 'Save email')}</Button>
-              {!account.emailVerified && <Button disabled={email !== account.email} onClick={() => { void run('email', async () => { await verifyEmail(); return { ok: true } }, apiIsLocal ? s.verified : zh ? '验证邮件已发送，请打开邮件中的链接。' : 'Verification email sent. Open the link in your email.') }}>{s.verifyEmail}</Button>}
-            </div>
-            {email !== account.email && <p className="panel-copy">{zh ? '请先保存新邮箱，再进行验证。' : 'Save your new email before verifying it.'}</p>}
-            {message('email')}
-          </form>
+          <Field label={zh ? '注册邮箱' : 'Registered email'} hint={zh ? '邮箱在注册时通过验证码绑定，暂不支持修改。' : 'Bound using a verification code during registration. Email changes are not currently supported.'}>
+            <Input type="email" value={account.email} readOnly autoComplete="email" />
+          </Field>
         </SettingsRow>
       </Panel>
 
@@ -81,15 +70,7 @@ export function SettingsPage({ t, language }: { t: Copy; language: Language }) {
             {message('password')}
           </form>
           <Disclosure title={s.forgotTitle}>
-            <form className="settings-form" onSubmit={(event) => {
-              event.preventDefault()
-              void run('reset', async () => { await requestPasswordReset(resetEmail || account.email); return { ok: true } }, s.resetSent)
-            }}>
-              <p className="panel-copy">{zh ? '无法提供当前密码时，可通过注册邮箱申请重置。' : 'If you cannot provide your current password, request a reset using your registered email.'}</p>
-              <Field label={zh ? '注册邮箱' : 'Registered email'}><Input type="email" value={resetEmail} onChange={(event) => setResetEmail(event.target.value)} placeholder={account.email} autoComplete="email" /></Field>
-              <Button type="submit">{saving('reset', s.sendReset)}</Button>
-              {message('reset')}
-            </form>
+            <ResetPassword language={language} initialEmail={account.email} />
           </Disclosure>
         </SettingsRow>
       </Panel>

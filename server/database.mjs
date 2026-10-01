@@ -13,6 +13,9 @@ export function openDatabase(filename) {
       id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE COLLATE NOCASE,
       password TEXT NOT NULL, data TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS registration_codes (
+      email TEXT PRIMARY KEY, digest TEXT NOT NULL, expires INTEGER NOT NULL, attempts INTEGER NOT NULL DEFAULT 0
+    );
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY, account_id TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
       expires INTEGER NOT NULL

@@ -12,7 +12,7 @@ export type { Account, Order, OrderLine }
 export type AccountStore = {
   account: Account | null
   ready: boolean
-  register: (input: { name: string; email: string; password: string }) => Promise<{ ok: true } | { ok: false; error: string }>
+  register: (input: { name: string; email: string; password: string; code?: string }) => Promise<{ ok: true } | { ok: false; error: string }>
   signIn: (input: { email: string; password: string }) => Promise<{ ok: true } | { ok: false; error: string }>
   signOut: () => Promise<void>
   /** Records a purchase against the signed-in account. */
@@ -79,7 +79,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     }
   }, [loadOrders])
 
-  const register = useCallback(async (input: { name: string; email: string; password: string }) => {
+  const register = useCallback(async (input: { name: string; email: string; password: string; code?: string }) => {
     const result = await api.auth.register(input)
     if (!result.ok) return { ok: false as const, error: result.error }
     sessionVersion.current++

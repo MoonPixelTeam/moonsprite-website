@@ -8,7 +8,8 @@ import { configuration } from '../server/config.mjs'
 import { serveStatic } from '../server/static.mjs'
 const directory = await mkdtemp(join(tmpdir(), 'moonsprite-data-browser-'))
 const config = configuration({ DATA_DIR: directory })
-const app = createApplication(config, { serveAsset: serveStatic('dist') })
+const mails = []
+const app = createApplication(config, { sendMail: async mail => mails.push(mail), serveAsset: serveStatic('dist') })
 let browser
 try {
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve))
@@ -17,7 +18,8 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
   await page.addInitScript(() => localStorage.setItem('moonsprite-language', 'zh'))
   const errors = []; page.on('pageerror', error => errors.push(error.message))
-  const response = await page.request.post(base + '/api/auth/register', { headers: { 'X-MoonSprite-Client': 'web' }, data: { name: '数据管理员', email: 'data-admin@example.com', password: 'browser-test-password' } })
+  await page.request.post(base + '/api/auth/register/code', { headers: { 'X-MoonSprite-Client': 'web' }, data: { email: 'data-admin@example.com' } })
+  const response = await page.request.post(base + '/api/auth/register', { headers: { 'X-MoonSprite-Client': 'web' }, data: { code: mails.at(-1).text.match(/\d{6}/)[0], name: '数据管理员', email: 'data-admin@example.com', password: 'browser-test-password' } })
   assert.equal(response.status(), 201)
   const account = await response.json()
   app.store.db.prepare('UPDATE accounts SET data=? WHERE id=?').run(JSON.stringify({ ...account, roles: ['admin'] }), account.id)
