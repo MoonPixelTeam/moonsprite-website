@@ -28,7 +28,10 @@ async function fixture(t, options = {}) {
     }
   }
   const register = async (address, roles) => {
-    const call = client(), response = await call('/auth/register', 'POST', { name: address.split('@')[0], email: address, password, roles: ['admin'] })
+    const call = client()
+    assert.equal((await call('/auth/register/code', 'POST', { email: address })).status, 200)
+    const code = messages.at(-1).text.match(/\d{6}/)[0]
+    const response = await call('/auth/register', 'POST', { code, name: address.split('@')[0], email: address, password, roles: ['admin'] })
     assert.equal(response.status, 201)
     assert.deepEqual(response.data.roles, ['buyer'])
     if (roles) {
@@ -130,21 +133,18 @@ test('account verification/reset tokens are single-use, password hashes are salt
   assert.ok(rows.every(row => !row.password.includes(password)))
   const cookie = (await user('/auth/sign-in', 'POST', { email: account.email, password })).headers.get('set-cookie')
   assert.match(cookie, /HttpOnly/); assert.match(cookie, /SameSite=Lax/)
-  assert.equal((await user('/auth/email/verify', 'POST')).data.emailVerified, false)
-  const verify = new URL(f.messages[0].text.match(/https?:\/\/\S+/)[0])
-  const token = verify.searchParams.get('token')
-  assert.equal((await user('/auth/email/verify?token=' + token)).status, 200)
-  assert.equal((await user('/auth/session')).data.emailVerified, false)
-  assert.equal((await user('/auth/email/verify', 'POST', { token })).status, 200)
-  assert.equal((await user('/auth/session')).data.emailVerified, true)
-  assert.equal((await user('/auth/email/verify', 'POST', { token })).status, 400)
+  assert.equal(account.emailVerified, true)
+  assert.equal((await user('/auth/email/verify', 'POST')).status, 410)
+  assert.equal((await user('/auth/email/verify?token=old-link')).status, 410)
+  assert.equal((await user('/auth/profile', 'PATCH', { email: 'unverified@example.com' })).status, 409)
+  assert.equal((await user('/auth/session')).data.email, account.email)
   const guest = f.client()
-  assert.equal((await guest('/auth/password/reset', 'POST', { email: 'missing@example.com' })).status, 204)
-  assert.equal((await guest('/auth/password/reset', 'POST', { email: account.email })).status, 204)
-  const resetToken = new URL(f.messages.at(-1).text.match(/https?:\/\/\S+/)[0]).searchParams.get('token')
-  assert.equal((await guest('/auth/password/reset', 'POST', { token: resetToken, password: 'new-password-456' })).status, 200)
+  assert.equal((await guest('/auth/password/reset/code', 'POST', { email: 'missing@example.com' })).status, 200)
+  assert.equal((await guest('/auth/password/reset/code', 'POST', { email: account.email })).status, 200)
+  const resetToken = f.messages.at(-1).text.match(/\d{6}/)[0]
+  assert.equal((await guest('/auth/password/reset', 'POST', { email: account.email, code: resetToken, password: 'new-password-456' })).status, 204)
   assert.equal((await user('/auth/session')).data, null)
-  assert.equal((await guest('/auth/password/reset', 'POST', { token: resetToken, password: 'another-password' })).status, 400)
+  assert.equal((await guest('/auth/password/reset', 'POST', { email: account.email, code: resetToken, password: 'another-password' })).status, 400)
   assert.equal((await user('/auth/sign-in', 'POST', { email: account.email, password })).status, 401)
   assert.equal((await user('/auth/sign-in', 'POST', { email: account.email, password: 'new-password-456' })).status, 200)
   assert.equal((await user('/auth/account', 'DELETE')).status, 204)
@@ -303,4 +303,45 @@ test('admin data browser: safe projections, search, filters, pagination and read
   for (const query of ['dataset=sessions', 'dataset=__proto__', 'dataset=accounts', 'page=-1', 'page=1.5', 'status=unknown', "dataset=users%27%3BDELETE%20FROM%20accounts"]) assert.equal((await admin('/admin/data?' + query)).status, 400)
   assert.equal((await admin('/admin/data', 'POST', { sql: 'DELETE FROM accounts' })).status, 404)
   assert.equal(db.prepare('SELECT count(*) AS n FROM accounts').get().n, 3)
+})
+
+
+test('registration requires a single-use email code with expiry, attempt and resend limits', async t => {
+  const f = await fixture(t)
+  const client = f.client()
+  const email = 'verify-registration@example.com'
+  const body = { name: '注册测试', email, password }
+  assert.equal((await client('/auth/register', 'POST', body)).status, 400)
+  assert.equal((await client('/auth/register/code', 'POST', { email })).status, 200)
+  const code = f.messages.at(-1).text.match(/\d{6}/)[0]
+  assert.equal((await client('/auth/register/code', 'POST', { email })).status, 429)
+  assert.equal((await client('/auth/register', 'POST', { ...body, email: 'wrong@example.com', code })).status, 400)
+  const wrong = code === '000000' ? '111111' : '000000'
+  for (let i = 0; i < 5; i++) assert.equal((await client('/auth/register', 'POST', { ...body, code: wrong })).status, 400)
+  assert.equal((await client('/auth/register', 'POST', { ...body, code })).status, 400)
+  const db = f.store().db
+  db.prepare('UPDATE registration_codes SET attempts=0,expires=? WHERE email=?').run(Date.now() - 1, email)
+  assert.equal((await client('/auth/register', 'POST', { ...body, code })).status, 400)
+  db.prepare('UPDATE registration_codes SET expires=? WHERE email=?').run(Date.now() + 600000, email)
+  const result = await client('/auth/register', 'POST', { ...body, code })
+  assert.equal(result.status, 201)
+  assert.equal(result.data.emailVerified, true)
+  assert.equal(db.prepare('SELECT count(*) AS n FROM registration_codes WHERE email=?').get(email).n, 0)
+  assert.equal((await client('/auth/register', 'POST', { ...body, code })).status, 409)
+})
+
+
+test('reset codes are email bound, expire, limit attempts and remain separate from registration', async t => {
+  const f = await fixture(t)
+  const { account } = await f.register('reset-test@example.com')
+  const call = f.client()
+  assert.equal((await call('/auth/password/reset/code', 'POST', { email: account.email })).status, 200)
+  const code = f.messages.at(-1).text.match(/\d{6}/)[0]
+  assert.equal((await call('/auth/password/reset/code', 'POST', { email: account.email })).status, 429)
+  assert.equal((await call('/auth/password/reset', 'POST', { email: 'elsewhere@example.com', code, password })).status, 400)
+  const wrong = code === '000000' ? '111111' : '000000'
+  for (let i = 0; i < 5; i++) assert.equal((await call('/auth/password/reset', 'POST', { email: account.email, code: wrong, password })).status, 400)
+  assert.equal((await call('/auth/password/reset', 'POST', { email: account.email, code, password })).status, 400)
+  f.store().db.prepare('UPDATE registration_codes SET attempts=0,expires=0 WHERE email=?').run(`reset:${account.id}`)
+  assert.equal((await call('/auth/password/reset', 'POST', { email: account.email, code, password })).status, 400)
 })

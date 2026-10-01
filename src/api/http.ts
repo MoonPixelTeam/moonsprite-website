@@ -20,8 +20,8 @@ export const httpAdapter: ApiClient = {
       // reported as bad credentials rather than leaking whether the address exists.
       return result.ok ? { ok: true, account: result.data } : { ok: false, error: result.error }
     },
-    async register({ name, email, password }): Promise<AuthResult> {
-      const result = await attempt(() => request<Account>('/auth/register', { method: 'POST', body: { name, email, password } }))
+    async register({ name, email, password, code }): Promise<AuthResult> {
+      const result = await attempt(() => request<Account>('/auth/register', { method: 'POST', body: { name, email, password, code } }))
       return result.ok ? { ok: true, account: result.data } : { ok: false, error: result.error }
     },
     async signOut(): Promise<void> {
@@ -39,7 +39,7 @@ export const httpAdapter: ApiClient = {
       return await attempt(() => request<void>('/auth/password', { method: 'POST', body: { current, next } }))
     },
     async requestPasswordReset(email) {
-      await request<void>('/auth/password/reset', { method: 'POST', body: { email } })
+      await request('/auth/password/reset/code', { method: 'POST', body: { email } })
       return { ok: true, exists: false }
     },
     async verifyEmail(): Promise<AuthResult> {

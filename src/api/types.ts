@@ -86,7 +86,7 @@ export type ApiClient = {
   auth: {
     current(): Promise<Account | null>
     signIn(input: { email: string; password: string }): Promise<AuthResult>
-    register(input: { name: string; email: string; password: string }): Promise<AuthResult>
+    register(input: { name: string; email: string; password: string; code?: string }): Promise<AuthResult>
     signOut(): Promise<void>
     updateName(name: string): Promise<AuthResult>
     updateEmail(email: string): Promise<AuthResult>
