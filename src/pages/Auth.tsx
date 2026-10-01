@@ -48,7 +48,7 @@ export function AuthPage({ t, language, mode, returnTo }: { t: Copy; language: L
           <Button block disabled={busy || sending || cooldown > 0 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())} onClick={async () => {
             setSending(true); setError(null); setCodeNotice('')
             try { const result = await request<{ retryAfter: number }>('/auth/register/code', { method: 'POST', body: { email } }); setCooldown(result.retryAfter); setCodeNotice(language === 'zh' ? '验证码已发送，请查看邮箱（包括垃圾邮件）。' : 'Code sent. Check your inbox and spam folder.') }
-            catch (cause) { const key = cause instanceof ApiError ? cause.code : ''; setError(errors[key] ?? emailCodeError(cause, language)); if (key === 'rate-limited') setCooldown(60) }
+            catch (cause) { const key = cause instanceof ApiError ? cause.code : ''; setError(errors[key] ?? emailCodeError(cause, language)); if (cause instanceof ApiError && cause.retryAfter) setCooldown(cause.retryAfter) }
             finally { setSending(false) }
           }}>{sending ? (language === 'zh' ? '正在发送…' : 'Sending…') : cooldown > 0 ? `${cooldown}s` : language === 'zh' ? '获取验证码' : 'Get code'}</Button>
           {codeNotice && <p role="status">{codeNotice}</p>}

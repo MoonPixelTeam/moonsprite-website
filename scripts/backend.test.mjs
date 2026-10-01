@@ -4,6 +4,7 @@ import { mkdtemp, rm, mkdir, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createApplication } from '../server/app.mjs'
+import { hashToken } from '../server/auth.mjs'
 import { configuration } from '../server/config.mjs'
 import { signZpay } from '../server/payments.mjs'
 import { serveStatic } from '../server/static.mjs'
@@ -14,7 +15,7 @@ async function fixture(t, options = {}) {
   const directory = await mkdtemp(join(tmpdir(), 'moonsprite-backend-'))
   const messages = []
   const config = { ...configuration({ DATA_DIR: directory }), zpayPid: 'test-merchant', zpayKey: 'private-test-key', ...options }
-  let app = createApplication(config, { sendMail: async mail => messages.push(mail), queryPayment: options.queryPayment, serveAsset: serveStatic(join(directory, 'dist')) })
+  let app = createApplication(config, { sendMail: options.sendMail ?? (async mail => messages.push(mail)), queryPayment: options.queryPayment, serveAsset: serveStatic(join(directory, 'dist')) })
   const listen = async () => { await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve)); return `http://127.0.0.1:${app.server.address().port}` }
   let base = await listen()
   t.after(async () => { await app.close(); await rm(directory, { recursive: true, force: true }) })
@@ -38,6 +39,7 @@ async function fixture(t, options = {}) {
       const account = { ...response.data, roles }
       app.store.db.prepare('UPDATE accounts SET data=? WHERE id=?').run(JSON.stringify(account), account.id)
     }
+    app.store.db.prepare('DELETE FROM limits WHERE key=?').run('mail-v2:' + hashToken(address))
     return { call, account: response.data }
   }
   const notify = (order, changes = {}) => {
@@ -138,6 +140,7 @@ test('account verification/reset tokens are single-use, password hashes are salt
   assert.equal((await user('/auth/email/verify?token=old-link')).status, 410)
   assert.equal((await user('/auth/profile', 'PATCH', { email: 'unverified@example.com' })).status, 409)
   assert.equal((await user('/auth/session')).data.email, account.email)
+  f.store().db.prepare('UPDATE accounts SET data=? WHERE id=?').run(JSON.stringify({ ...account, emailVerified: false }), account.id)
   const guest = f.client()
   assert.equal((await guest('/auth/password/reset/code', 'POST', { email: 'missing@example.com' })).status, 200)
   assert.equal((await guest('/auth/password/reset/code', 'POST', { email: account.email })).status, 200)
@@ -147,6 +150,7 @@ test('account verification/reset tokens are single-use, password hashes are salt
   assert.equal((await guest('/auth/password/reset', 'POST', { email: account.email, code: resetToken, password: 'another-password' })).status, 400)
   assert.equal((await user('/auth/sign-in', 'POST', { email: account.email, password })).status, 401)
   assert.equal((await user('/auth/sign-in', 'POST', { email: account.email, password: 'new-password-456' })).status, 200)
+  assert.equal((await user('/auth/session')).data.emailVerified, true)
   assert.equal((await user('/auth/account', 'DELETE')).status, 204)
   assert.equal((await user('/auth/session')).data, null)
 })
@@ -344,4 +348,48 @@ test('reset codes are email bound, expire, limit attempts and remain separate fr
   assert.equal((await call('/auth/password/reset', 'POST', { email: account.email, code, password })).status, 400)
   f.store().db.prepare('UPDATE registration_codes SET attempts=0,expires=0 WHERE email=?').run(`reset:${account.id}`)
   assert.equal((await call('/auth/password/reset', 'POST', { email: account.email, code, password })).status, 400)
+})
+
+
+test('mail limits count accepted mail only, retain failure cooldown and return exact retry windows', async t => {
+  let fail = true, sent = 0
+  const f = await fixture(t, { sendMail: async () => { if (fail) throw new Error('SMTP failed'); sent++ } })
+  const call = f.client(), address = 'limits@example.com', key = 'mail-v2:' + hashToken(address)
+  const send = () => call('/auth/register/code', 'POST', { email: address })
+  let result = await send()
+  assert.equal(result.status, 503)
+  assert.equal(result.headers.get('retry-after'), '30')
+  assert.equal(f.store().db.prepare('SELECT count FROM limits WHERE key=?').get(key + ':hour'), undefined)
+  const before = f.store().db.prepare('SELECT * FROM limits WHERE key=?').get(key)
+  result = await send()
+  assert.equal(result.status, 429)
+  assert.ok(result.data.error.retryAfter > 0 && result.data.error.retryAfter <= 30)
+  assert.deepEqual(f.store().db.prepare('SELECT * FROM limits WHERE key=?').get(key), before)
+  fail = false
+  for (let i = 0; i < 10; i++) {
+    f.store().db.prepare('DELETE FROM limits WHERE key=?').run(key)
+    assert.equal((await send()).status, 200)
+  }
+  result = await send()
+  assert.equal(result.status, 429)
+  assert.ok(result.data.error.retryAfter > 3500)
+  assert.equal(sent, 10)
+  assert.equal(f.store().db.prepare('SELECT count FROM limits WHERE key=?').get(key + ':hour').count, 10)
+})
+
+
+test('free packs grant download access without ZPAY, including a sellers own free pack', async t => {
+  const f = await fixture(t, { zpayKey: '', zpayPid: '' })
+  const { call: seller } = await f.register('free-seller@example.com', ['admin'])
+  const { call: buyer } = await f.register('free-buyer@example.com')
+  const product = await publish(seller, seller, 0)
+  for (const call of [seller, buyer]) {
+    const result = await call('/orders', 'POST', { lines: [{ id: product.id, quantity: 1 }] })
+    assert.equal(result.status, 201)
+    assert.equal(result.data.status, 'paid')
+    assert.equal(result.data.paymentCny, 0)
+    assert.equal(result.data.paymentUrl, undefined)
+    assert.ok(f.store().db.prepare('SELECT 1 FROM entitlements WHERE order_id=?').get(result.data.id))
+    assert.equal((await call('/orders', 'POST', { lines: [{ id: product.id, quantity: 1 }] })).data.error.code, 'owned')
+  }
 })

@@ -1,3 +1,4 @@
+import { checkoutError } from '../market/checkout-error'
 import { useRelatedProducts } from '../market/useRelatedProducts'
 import { ProductFacts } from '../market/ProductFacts'
 import { formatProductPrice } from '../market/catalog'
@@ -280,7 +281,7 @@ function CartDrawer({ open, cart, t, language, onClose }: {
             </Button>
             <Button onClick={() => setStep('cart')}>{market.checkout.back}</Button>
           </div>
-          {paymentError && <Alert tone="danger" role="alert">{paymentError === 'payment-unavailable' ? (language === 'zh' ? '收款暂未配置，当前只能领取免费素材。' : 'Payments are not configured. Only free packs are available.') : paymentError === 'pending-order' ? (language === 'zh' ? '存在包含这些素材的待付款订单，请前往购买记录继续付款。' : 'These packs have a pending order. Continue payment from Purchases.') : language === 'zh' ? '订单未完成。请检查登录状态，刷新商品价格与上架状态后重试。' : 'Order failed. Check your session and refresh product prices and availability before retrying.'}</Alert>}
+          {paymentError && <Alert tone="danger" role="alert">{checkoutError(paymentError, language)}</Alert>}
           {agreeError && <Alert tone="danger" role="alert">{market.checkout.mustAgree}</Alert>}
         </div>
         : <>

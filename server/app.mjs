@@ -53,12 +53,36 @@ export function createApplication(config, overrides = {}) {
   const entitled = (accountId, productId) => Boolean(db.prepare('SELECT 1 FROM entitlements WHERE account_id=? AND product_id=?').get(accountId, productId))
   const review = productId => get('review', productId) ?? { id: productId, status: 'pending', at: 0 }
   const fee = () => get('settings', 'platform')?.percent ?? 8
+  const limited = expires => {
+    const error = new HttpError(429, 'rate-limited')
+    error.retryAfter = Math.max(1, Math.ceil((expires - Date.now()) / 1000))
+    throw error
+  }
   const rateLimit = (key, max, duration = 15 * 60000) => {
     const now = Date.now()
     db.prepare('DELETE FROM limits WHERE expires<=?').run(now)
+    const row = db.prepare('SELECT count,expires FROM limits WHERE key=?').get(key)
+    if (row?.count >= max) limited(row.expires)
     db.prepare('INSERT INTO limits VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET count=count+1').run(key, now + duration)
-    const row = db.prepare('SELECT count FROM limits WHERE key=?').get(key)
-    requireValue(row.count <= max, 'rate-limited', 429)
+  }
+  // Reserve before awaiting SMTP so concurrent requests cannot send duplicate emails.
+  const pendingMail = new Set()
+  const beginMail = address => {
+    const key = 'mail-v2:' + hashToken(address), now = Date.now()
+    const rows = db.prepare('SELECT count,expires FROM limits WHERE key IN (?,?) AND expires>?').all(key, key + ':hour', now)
+    const blocked = rows.filter(row => row.count >= 10 || row.count === -1)
+    if (blocked.length) limited(Math.max(...blocked.map(row => row.expires)))
+    if (pendingMail.has(key)) limited(now + 30000)
+    pendingMail.add(key)
+    db.prepare('INSERT OR REPLACE INTO limits VALUES(?,-1,?)').run(key, now + 30000)
+    return success => {
+      pendingMail.delete(key)
+      db.prepare('UPDATE limits SET expires=? WHERE key=?').run(Date.now() + (success ? 60000 : 30000), key)
+      if (success) {
+        db.prepare('DELETE FROM limits WHERE key=? AND expires<=?').run(key + ':hour', Date.now())
+        db.prepare('INSERT INTO limits VALUES(?,1,?) ON CONFLICT(key) DO UPDATE SET count=count+1').run(key + ':hour', Date.now() + 3600000)
+      }
+    }
   }
   const publicOrder = order => ({ id: order.id, createdAt: order.createdAt, total: order.total, lines: order.lines.map(({ sellerId, feeCents, ...line }) => line), status: order.status,
     paymentCny: order.cnyCents / 100, ...(order.status === 'pending' ? { paymentUrl: `/api/payments/${order.id}/checkout` } : {}) })
@@ -133,17 +157,17 @@ export function createApplication(config, overrides = {}) {
       if (method === 'GET' && path === '/api/auth/session') return json(res, auth.current(req))
       if (method === 'POST' && path === '/api/auth/register/code') {
         const address = email(body.email)
-        rateLimit(`register-mail-ip:${clientIp}`, 10, 3600000)
-        rateLimit(`register-mail-hour:${hashToken(address)}`, 5, 3600000)
-        rateLimit(`register-mail-minute:${hashToken(address)}`, 1, 60000)
+        rateLimit(`mail-v2-ip:${clientIp}`, 30, 3600000)
         requireValue(!db.prepare('SELECT 1 FROM accounts WHERE email=?').get(address), 'exists', 409)
+        const finishMail = beginMail(address)
         const code = String(randomInt(0, 1000000)).padStart(6, '0')
         const salt = randomToken()
         const digest = `${salt}:${hashToken(`${salt}:${address}:${code}`)}`
         db.prepare('DELETE FROM registration_codes WHERE expires <= ?').run(Date.now())
         db.prepare('INSERT INTO registration_codes VALUES(?,?,?,0) ON CONFLICT(email) DO UPDATE SET digest=excluded.digest,expires=excluded.expires,attempts=0').run(address, digest, Date.now() + 600000)
         try { await sendMail(verificationEmail({ to: address, code, purpose: 'register', publicOrigin: config.publicOrigin })) }
-        catch { db.prepare('DELETE FROM registration_codes WHERE email=? AND digest=?').run(address, digest); throw new HttpError(503, 'mail-unavailable') }
+        catch { finishMail(false); db.prepare('DELETE FROM registration_codes WHERE email=? AND digest=?').run(address, digest); const error = new HttpError(503, 'mail-unavailable'); error.retryAfter = 30; throw error }
+        finishMail(true)
         return json(res, { retryAfter: 60, expiresIn: 600 })
       }
       if (method === 'POST' && path === '/api/auth/register') {
@@ -200,20 +224,21 @@ export function createApplication(config, overrides = {}) {
       if (path === '/api/auth/email/verify') throw new HttpError(410, 'registration-verification-only')
       if (method === 'POST' && path === '/api/auth/password/reset/code') {
         const address = email(body.email)
-        rateLimit(`reset-mail-ip:${clientIp}`, 10, 3600000)
-        rateLimit(`reset-mail-hour:${hashToken(address)}`, 5, 3600000)
-        rateLimit(`reset-mail-minute:${hashToken(address)}`, 1, 60000)
+        rateLimit(`mail-v2-ip:${clientIp}`, 30, 3600000)
         const row = db.prepare('SELECT id FROM accounts WHERE email=?').get(address)
+        const finishMail = beginMail(address)
+        let sent = !row
         if (row) {
           const key = `reset:${row.id}`
           const code = String(randomInt(0, 1000000)).padStart(6, '0'), salt = randomToken()
           const digest = `${salt}:${hashToken(`${salt}:${address}:${code}`)}`
           db.prepare('DELETE FROM registration_codes WHERE expires <= ?').run(Date.now())
           db.prepare('INSERT INTO registration_codes VALUES(?,?,?,0) ON CONFLICT(email) DO UPDATE SET digest=excluded.digest,expires=excluded.expires,attempts=0').run(key, digest, Date.now() + 600000)
-          try { await sendMail(verificationEmail({ to: address, code, purpose: 'reset', publicOrigin: config.publicOrigin })) }
+          try { await sendMail(verificationEmail({ to: address, code, purpose: 'reset', publicOrigin: config.publicOrigin })); sent = true }
           catch { db.prepare('DELETE FROM registration_codes WHERE email=? AND digest=?').run(key, digest) }
         }
-        return json(res, { retryAfter: 60, expiresIn: 600 })
+        finishMail(sent)
+        return json(res, { retryAfter: sent ? 60 : 30, expiresIn: 600 })
       }
       if (method === 'POST' && path === '/api/auth/password/reset') {
         const address = email(body.email), next = password(body.password)
@@ -231,7 +256,8 @@ export function createApplication(config, overrides = {}) {
           const current = db.prepare('SELECT * FROM registration_codes WHERE email=?').get(key)
           requireValue(current && current.digest === codeRow.digest && current.expires > Date.now() && current.attempts < 5, 'reset-code')
           requireValue(accountRow(row.id)?.email === address, 'reset-code')
-          db.prepare('UPDATE accounts SET password=? WHERE id=?').run(hashed, row.id)
+          const verifiedAccount = { ...JSON.parse(accountRow(row.id).data), emailVerified: true }
+          db.prepare('UPDATE accounts SET password=?, data=? WHERE id=?').run(hashed, JSON.stringify(verifiedAccount), row.id)
           db.prepare('DELETE FROM registration_codes WHERE email=?').run(key)
           db.prepare('DELETE FROM sessions WHERE account_id=?').run(row.id)
           db.prepare('DELETE FROM tokens WHERE account_id=?').run(row.id)
@@ -288,7 +314,7 @@ export function createApplication(config, overrides = {}) {
             const product = get('product', line.id)
             requireValue(product && !product.archived && review(line.id).status === 'approved', 'unavailable', 409)
             requireValue(hasFile(product.id), 'missing-file', 409)
-            requireValue(product.sellerId !== account.id, 'own-product', 409)
+            requireValue(product.price === 0 || product.sellerId !== account.id, 'own-product', 409)
             requireValue(!entitled(account.id, product.id), 'owned', 409)
             return { id: product.id, name: product.name.zh, price: product.price, quantity: line.quantity, sellerId: product.sellerId, platformFeePercent: fee(), feeCents: Math.round(cents(product.price) * line.quantity * fee() / 100) }
           }).sort((a, b) => a.id.localeCompare(b.id))
@@ -503,8 +529,8 @@ export function createApplication(config, overrides = {}) {
       if (res.headersSent) { res.destroy(); return }
       const status = error instanceof HttpError ? error.status : 500
       if (status === 500) console.error('API failure:', error.message)
-      if (status === 429) res.setHeader('Retry-After', '60')
-      json(res, { error: { code: error instanceof HttpError ? error.code : 'server' } }, status)
+      if (error.retryAfter) res.setHeader('Retry-After', String(error.retryAfter))
+      json(res, { error: { code: error instanceof HttpError ? error.code : 'server', ...(error.retryAfter ? { retryAfter: error.retryAfter } : {}) } }, status)
     }
   })
   server.requestTimeout = 60000
