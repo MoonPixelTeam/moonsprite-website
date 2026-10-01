@@ -14,6 +14,7 @@ export type Order = { id: string; createdAt: number; total: number; lines: Order
 export type AuthResult = { ok: true; account: Account } | { ok: false; error: string }
 
 export type StudioProduct = {
+  priceCnyCents?: number
   soldCount?: number
   cartCount?: number
   compatibleVersion?: string

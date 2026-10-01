@@ -17,7 +17,7 @@ export function studioToProduct(item: StudioProduct, catalogue: StudioProduct[] 
     name: item.name,
     tagline: item.tagline,
     body: item.body,
-    price: item.price,
+    price: item.priceCnyCents === undefined ? item.price : item.priceCnyCents / 100 / 7.2,
     updatedAt: item.updatedAt,
     soldCount: item.soldCount,
     cartCount: item.cartCount,

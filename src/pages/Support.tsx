@@ -96,7 +96,7 @@ export function SupportPage({ t, language }: { t: Copy; language: Language }) {
                   { value: '', label: language === 'zh' ? '不关联订单' : 'No related order' },
                   ...orders.map((order) => ({
                     value: order.id,
-                    label: `${order.id} · ${new Date(order.createdAt).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}`,
+                    label: `${order.lines.map(line => line.name).join('、')} · ${order.id} · ${new Date(order.createdAt).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US')}`,
                   })),
                 ]} />
             </FormField>}

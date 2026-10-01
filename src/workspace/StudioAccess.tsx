@@ -10,9 +10,9 @@ export function StudioAccess({ t, language, children }: { t: Copy; language: Lan
   const studio = useStudio()
   const [password, setPassword] = useState('')
   const [error, setError] = useState(false)
-  if (studio.loading) return <main id="main"><LoadingState label={language === 'zh' ? '正在载入工作室…' : 'Loading your studio…'} /></main>
+  if (studio.loading) return <main id="main"><LoadingState label={language === 'zh' ? '正在载入商家中心…' : 'Loading seller center…'} /></main>
   if (studio.unlocked) return children
-  if (!apiIsLocal) return <WorkspacePage title={language === 'zh' ? '需要创作者权限' : 'Creator access required'}><Panel><p>{language === 'zh' ? '请使用已开通创作者权限的账号登录。可通过支持页面联系管理员开通。' : 'Sign in with a creator account. Contact support to request creator access.'}</p><Button href="#/support">{language === 'zh' ? '联系支持' : 'Contact support'}</Button></Panel></WorkspacePage>
+  if (!apiIsLocal) return <WorkspacePage title={language === 'zh' ? '需要商家权限' : 'Seller access required'}><Panel><p>{language === 'zh' ? '请使用已开通商家权限的账号登录。可通过支持页面联系管理员开通。' : 'Sign in with a seller account. Contact support to request seller access.'}</p><Button href="#/support">{language === 'zh' ? '联系支持' : 'Contact support'}</Button></Panel></WorkspacePage>
   const s = t.studioPage
   return <WorkspacePage title={s.gateTitle} subtitle={s.gateBody} eyebrow={s.eyebrow}>
     <Panel><form className="settings-form" onSubmit={(event) => { event.preventDefault(); if (password === 'studio') { studio.setUnlocked(true); setError(false) } else setError(true) }}>

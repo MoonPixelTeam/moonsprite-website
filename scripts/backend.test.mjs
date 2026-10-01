@@ -49,8 +49,8 @@ async function fixture(t, options = {}) {
   return { client, register, messages, config, notify, directory, store: () => app.store,
     restart: async () => { await app.close(); app = createApplication(config, { sendMail: async mail => messages.push(mail) }); base = await listen() } }
 }
-async function publish(seller, admin, price = 10) {
-  const response = await seller('/studio/products', 'POST', productInput(price)); assert.equal(response.status, 201)
+async function publish(seller, admin, price = 10, extra = {}) {
+  const response = await seller('/studio/products', 'POST', { ...productInput(price), ...extra }); assert.equal(response.status, 201)
   const product = response.data
   const form = new FormData(); form.append('file', new Blob(['private package bytes']), 'pet.mspet')
   assert.equal((await seller(`/files/${product.id}`, 'PUT', form)).status, 200)
@@ -392,4 +392,75 @@ test('free packs grant download access without ZPAY, including a sellers own fre
     assert.ok(f.store().db.prepare('SELECT 1 FROM entitlements WHERE order_id=?').get(result.data.id))
     assert.equal((await call('/orders', 'POST', { lines: [{ id: product.id, quantity: 1 }] })).data.error.code, 'owned')
   }
+})
+
+
+test('catalogue statistics count historical paid orders and deduplicate authenticated cart additions', async t => {
+  const f = await fixture(t)
+  const { call: seller } = await f.register('stats-seller@example.com', ['admin'])
+  const { call: buyer } = await f.register('stats-buyer@example.com')
+  const product = await publish(seller, seller, 0)
+  const stats = async () => (await buyer('/catalogue')).data.find(item => item.id === product.id)
+  assert.equal((await stats()).soldCount, 0)
+  assert.equal((await stats()).cartCount, 0)
+  assert.equal((await f.client()('/cart/events', 'POST', { ids: [product.id] })).status, 401)
+  for (let i = 0; i < 2; i++) assert.equal((await buyer('/cart/events', 'POST', { ids: [product.id, product.id, 'missing'] })).status, 204)
+  assert.equal((await stats()).cartCount, 1)
+  await seller('/cart/events', 'POST', { ids: [product.id] })
+  assert.equal((await stats()).cartCount, 2)
+  assert.equal((await buyer('/orders', 'POST', { lines: [{ id: product.id, quantity: 1 }] })).status, 201)
+  assert.equal((await stats()).soldCount, 1)
+  await f.restart()
+  assert.equal((await stats()).soldCount, 1)
+  assert.equal((await stats()).cartCount, 2)
+  const paid = await publish(seller, seller, 2)
+  await buyer('/orders', 'POST', { lines: [{ id: paid.id, quantity: 1 }] })
+  assert.equal((await buyer('/catalogue')).data.find(item => item.id === paid.id).soldCount, 0)
+})
+
+
+test('CNY listing cents remain exact through catalogue, quantities, signed checkout and settlement', async t => {
+  const f = await fixture(t)
+  const { call: seller } = await f.register('cny-seller@example.com', ['admin'])
+  const { call: buyer } = await f.register('cny-buyer@example.com')
+  for (const amount of [1, 500, 599, 1001]) {
+    const product = await publish(seller, seller, 999, { priceCnyCents: amount })
+    assert.equal(product.priceCnyCents, amount)
+    assert.equal(Math.round(product.price * 7.2 * 100), amount)
+    const result = await buyer('/orders', 'POST', { lines: [{ id: product.id, quantity: 3, price: 0, priceCnyCents: 0 }] })
+    assert.equal(result.status, 201)
+    assert.equal(result.data.paymentCny, amount * 3 / 100)
+    const endpoint = result.data.paymentUrl.replace('/api', '') + '-data'
+    assert.equal((await seller(endpoint)).status, 404)
+    assert.equal((await f.client()(endpoint)).status, 401)
+    const checkout = await buyer(endpoint)
+    assert.equal(checkout.status, 200)
+    assert.equal(checkout.data.money, (amount * 3 / 100).toFixed(2))
+    assert.equal(checkout.data.fields.sign, signZpay(checkout.data.fields, f.config.zpayKey))
+    const page = await buyer(result.data.paymentUrl.replace('/api', ''))
+    assert.ok(page.data.includes('value="' + (amount * 3 / 100).toFixed(2) + '"'))
+    assert.equal((await buyer(f.notify(result.data))).data, 'success')
+  }
+  const invalid = await seller('/studio/products', 'POST', { ...productInput(1), priceCnyCents: 1.5 })
+  assert.equal(invalid.status, 400)
+})
+
+
+test('editing approved listings returns them to review and administrators can inspect pending files', async t => {
+  const f = await fixture(t)
+  const { call: admin } = await f.register('review-admin@example.com', ['admin'])
+  const { call: seller } = await f.register('review-seller@example.com', ['creator'])
+  const { call: buyer } = await f.register('review-buyer@example.com')
+  const product = await publish(seller, admin, 0)
+  assert.equal((await seller('/studio/products/' + product.id, 'PATCH', productInput(2))).status, 200)
+  assert.equal(f.store().get('review', product.id).status, 'pending')
+  assert.ok(!(await buyer('/catalogue')).data.some(item => item.id === product.id))
+  assert.ok((await admin('/studio/products')).data.some(item => item.id === product.id))
+  const form = new FormData(); form.append('file', new Blob(['pending review version']), 'review.txt')
+  await seller('/files/' + product.id, 'PUT', form)
+  const metadata = await admin('/files/' + product.id)
+  assert.equal(metadata.status, 200)
+  assert.ok(metadata.data.url.endsWith('?draft=1'))
+  assert.equal((await admin(metadata.data.url.replace('/api', ''))).data, 'pending review version')
+  assert.equal((await buyer(metadata.data.url.replace('/api', ''))).status, 403)
 })

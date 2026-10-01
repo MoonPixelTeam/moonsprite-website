@@ -86,7 +86,7 @@ export function Home({ t, language }: { t: Copy; language: Language }) {
       <div className="content-wrap">
         <SectionHeading title={t.marketTeaser.title} actions={<Button variant="primary" href="#/market">{t.marketTeaser.cta}<ArrowRight aria-hidden="true" /></Button>} />
         <div className="shelf-stage home-popular-grid">
-          {teaser.map((product) => <PopularPackCard product={product} t={t} language={language} key={product.id} />)}
+          {teaser.map((product) => <PopularPackCard detailed product={product} t={t} language={language} key={product.id} />)}
         </div>
       </div>
     </section>

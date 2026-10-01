@@ -18,13 +18,13 @@ export function StudioPage({ t, language, section }: { t: Copy; language: Langua
   const studio = useStudio()
   const s = t.studioPage
   const zh = language === 'zh'
-  const title = section === 'products' ? (zh ? '作品管理' : 'Manage products') : section === 'sales' ? s.sales : (zh ? '工作室概览' : 'Studio overview')
+  const title = section === 'products' ? (zh ? '商品管理' : 'Manage products') : section === 'sales' ? s.sales : (zh ? '商家概览' : 'Seller overview')
   return <WorkspacePage title={title} subtitle={section === 'products' ? (zh ? '管理作品信息、审核状态与交付文件。' : 'Manage listings, review status and downloadable files.') : section === 'sales' ? (zh ? '按订单查看作品销售与收入。' : 'Review sales and earnings by order.') : s.subtitle} eyebrow={s.eyebrow} actions={<Button variant="primary" href="#/studio/publish">{s.publishCta}</Button>}>
     {!SITE_CONFIG.apiBaseUrl && <Alert tone="info">{s.prototypeBody}</Alert>}
     {section === 'products' ? <PublishedPacks t={t} language={language} /> : section === 'sales' ? <SalesTable t={t} language={language} /> : <>
       <EarningsOverview t={t} language={language} />
         <TaskLinks label={language === 'zh' ? '任务入口' : 'Tasks'} items={[
-{ href: '#/studio/products', title: zh ? '作品管理' : 'Products', description: zh ? '查看作品、编辑内容与交付文件' : 'Review and edit your listings and files', count: studio.products.length },
+{ href: '#/studio/products', title: zh ? '商品管理' : 'Products', description: zh ? '查看作品、编辑内容与交付文件' : 'Review and edit your listings and files', count: studio.products.length },
 { href: '#/studio/sales', title: s.sales, description: zh ? '查看订单、销量与收入明细' : 'Review orders and earnings', count: studio.sales.length },
 { href: '#/studio/settlement', title: zh ? '收益与结算' : 'Payouts', description: zh ? '查看收入、申请提现与查看进度' : 'Review earnings and withdrawal requests' }
       ]} />
@@ -93,7 +93,7 @@ function SalesTable({ t, language }: { t: Copy; language: Language }) {
     <div className="workspace-toolbar"><Field label={language === 'zh' ? '搜索作品或订单' : 'Search products or orders'}><Input type="search" value={query} onChange={(event) => setQuery(event.target.value)} /></Field></div>
     {sales.length === 0
       ? <EmptyState title={strings.noSales} />
-      : <div className="workspace-table-scroll"><table className="studio-table">
+      : <div className="workspace-table-scroll"><table className="studio-table sales-register-table">
         <thead>
           <tr>
             <th>{strings.colDate}</th>
@@ -122,7 +122,7 @@ export function StudioSalesOrderPage({ t, language, orderId }: { t: Copy; langua
   const zh = language === 'zh'
   const lines = studio.sales.filter((line) => line.orderId === orderId)
   if (!orderId || lines.length === 0) {
-    return <WorkspacePage eyebrow={t.studioPage.eyebrow} title={zh ? '找不到销售订单' : 'Sales order not found'} subtitle={zh ? '该订单可能已被移除，或不属于当前工作室。' : 'This order may have been removed or does not belong to this studio.'} back="#/studio/sales" backLabel={zh ? '返回销售记录' : 'Back to sales'}><Panel><EmptyState title={zh ? '没有可显示的销售明细' : 'No sales details available'} action={<Button href="#/studio/sales">{zh ? '返回销售记录' : 'Back to sales'}</Button>} /></Panel></WorkspacePage>
+    return <WorkspacePage eyebrow={t.studioPage.eyebrow} title={zh ? '找不到销售订单' : 'Sales order not found'} subtitle={zh ? '该订单可能已被移除，或不属于当前商家账号。' : 'This order may have been removed or does not belong to this seller account.'} back="#/studio/sales" backLabel={zh ? '返回销售记录' : 'Back to sales'}><Panel><EmptyState title={zh ? '没有可显示的销售明细' : 'No sales details available'} action={<Button href="#/studio/sales">{zh ? '返回销售记录' : 'Back to sales'}</Button>} /></Panel></WorkspacePage>
   }
   const gross = lines.reduce((sum, line) => sum + line.gross, 0)
   const fee = lines.reduce((sum, line) => sum + Math.round(line.gross * (line.platformFeePercent ?? studio.platformFeePercent) / 100), 0)

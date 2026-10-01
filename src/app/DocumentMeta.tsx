@@ -23,7 +23,7 @@ export function DocumentMeta({ route, language, t }: { route: Route; language: L
       settlement: `${t.studioSettlement.title} - MoonSprite`, admin: `${t.adminPage.title} - MoonSprite`,
     }
     const taskTitles: Record<string, string> = language === 'zh'
-      ? { data: '数据浏览', users: '用户权限组', products: '作品管理', sales: '销售记录', listings: '作品审核', tickets: '客服工单', reports: '举报处理', payouts: '提现审核', settings: '平台设置' }
+      ? { data: '数据浏览', users: '用户权限组', products: '商品管理', sales: '销售记录', listings: '商品审核', tickets: '客服工单', reports: '举报处理', payouts: '提现审核', settings: '平台设置' }
       : { data: 'Data browser', users: 'User groups', products: 'Manage products', sales: 'Sales', listings: 'Listing review', tickets: 'Support tickets', reports: 'Reports', payouts: 'Withdrawal review', settings: 'Platform settings' }
     document.title = (route.page === 'studio' || route.page === 'admin') && route.subId && taskTitles[route.subId] ? `${taskTitles[route.subId]} - MoonSprite` : titles[route.page]
     document.querySelector('meta[name="description"]')?.setAttribute('content', t.meta.description)

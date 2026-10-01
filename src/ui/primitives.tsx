@@ -109,7 +109,7 @@ export function Alert({ tone, title, icon, children, role = 'status' }: {
   children?: ReactNode
   role?: 'status' | 'alert'
 }) {
-  return <div className={`alert alert-${tone}`} role={role}>
+  return <div className={`alert alert-${tone}${title ? ' alert-titled' : ''}`} role={role}>
     {icon}
     {title && <strong>{title}</strong>}
     {children && <span className="alert-body">{children}</span>}

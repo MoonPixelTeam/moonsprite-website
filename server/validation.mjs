@@ -54,11 +54,13 @@ function sheet(value) {
 }
 export function listing(input) {
   requireValue(input && typeof input === 'object')
+  if (input.priceCnyCents !== undefined) requireValue(Number.isSafeInteger(input.priceCnyCents) && input.priceCnyCents >= 0 && input.priceCnyCents <= 72000000, 'amount')
   const category = string(input.category, 'category')
   requireValue(['pets', 'assets', 'bundles', 'extensions', 'scripts'].includes(category), 'category')
   const result = {
     name: text(input.name, 'name', 120, 1), tagline: text(input.tagline, 'tagline', 300),
-    body: text(input.body, 'body', 20000), category, price: cents(input.price) / 100,
+    body: text(input.body, 'body', 20000), category, price: input.priceCnyCents === undefined ? cents(input.price) / 100 : input.priceCnyCents / 100 / 7.2,
+    ...(input.priceCnyCents === undefined ? {} : { priceCnyCents: input.priceCnyCents }),
     size: string(input.size, 'size', 0, 120),
     formats: array(input.formats, 20, item => string(item, 'formats', 1, 40)),
     tags: array(input.tags ?? [], 30, item => string(item, 'tags', 1, 60)),

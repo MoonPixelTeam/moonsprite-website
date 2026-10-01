@@ -69,7 +69,7 @@ export function StudioPublish({ t, language, editing, onDone }: { t: Copy; langu
   const missing = [
     !draft.fileInfo ? { step: 0, label: s.fieldFile } : null,
     input.name.zh.trim().length < 2 ? { step: 1, label: zh ? '中文名称（至少 2 个字）' : 'Chinese name (at least 2 characters)' } : null,
-    !draft.cny.trim() || !Number.isFinite(Number(draft.cny)) || Number(draft.cny) < 0 || Number(draft.cny) > 720000 ? { step: 1, label: zh ? '有效价格（免费填写 0）' : 'Valid price (0 for free)' } : null,
+    !draft.cny.trim() || !Number.isFinite(Number(draft.cny)) || Number(draft.cny) < 0 || Number(draft.cny) > 720000 || !/^\d+(\.\d{1,2})?$/.test(draft.cny.trim()) ? { step: 1, label: zh ? '有效价格（免费填写 0）' : 'Valid price (0 for free)' } : null,
     !input.formats.length ? { step: 1, label: s.fieldFormats } : null,
     input.category === 'bundles' && (!input.packs?.length || input.packs.some(id => !studio.products.some(product => product.id === id && product.category !== 'bundles'))) ? { step: 2, label: zh ? '有效的合集成员' : 'Available bundle members' } : null,
   ].filter((item): item is { step: number; label: string } => Boolean(item))

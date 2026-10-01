@@ -381,18 +381,18 @@ export type SortKey = 'featured' | 'price-asc' | 'price-desc'
  */
 export const USD_TO_CNY = 7.2
 
-/** Rounded to whole yuan: a pixel pack price does not need sub-yuan precision. */
+/** CNY prices retain cent precision; USD values are display compatibility only. */
 /**
  * The studio prices in CNY, the catalogue stores USD. This is the same fixed rate
  * formatPrice uses, so a price typed in the studio shows the same number in the market.
  */
 export function cnyToUsd(cny: number): number {
-  return Math.max(0, Math.round(cny / USD_TO_CNY))
+  return Math.max(0, Math.round(cny * 100) / 100 / USD_TO_CNY)
 }
 
 /** The other direction, for opening a listing whose stored price is USD. */
 export function usdToCny(usd: number): number {
-  return Math.max(0, Math.round(usd * USD_TO_CNY))
+  return Math.max(0, Math.round(usd * USD_TO_CNY * 100) / 100)
 }
 
 /** Stored amounts remain USD; language selects display currency without changing records. */

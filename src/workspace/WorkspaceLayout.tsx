@@ -17,9 +17,9 @@ export function WorkspaceLayout({ route, language, children }: { route: Route; l
       { href: '#/settings', label: zh ? '账号设置' : 'Settings', active: route.page === 'settings' },
       { href: '#/support', label: zh ? '客服与工单' : 'Support', active: route.page === 'support' },
     ] },
-    { title: zh ? '创作者工作室' : 'Creator studio', links: [
-      { href: '#/studio', label: zh ? '工作室概览' : 'Studio overview', active: route.page === 'studio' && !route.subId },
-      { href: '#/studio/products', label: zh ? '作品管理' : 'Manage products', active: (route.page === 'studio' && route.subId === 'products') || route.page === 'studio-publish' },
+    { title: zh ? '商家中心' : 'Seller center', links: [
+      { href: '#/studio', label: zh ? '商家概览' : 'Seller overview', active: route.page === 'studio' && !route.subId },
+      { href: '#/studio/products', label: zh ? '商品管理' : 'Manage products', active: (route.page === 'studio' && route.subId === 'products') || route.page === 'studio-publish' },
       { href: '#/studio/sales', label: zh ? '销售记录' : 'Sales', active: route.page === 'studio' && route.subId === 'sales' },
       { href: '#/studio/settlement', label: zh ? '收益与结算' : 'Payouts', active: route.page === 'settlement' },
     ] },
@@ -29,7 +29,7 @@ export function WorkspaceLayout({ route, language, children }: { route: Route; l
     ...[
       ['data', zh ? '数据浏览' : 'Data browser'],
       ['users', zh ? '用户权限组' : 'User groups'],
-      ['listings', zh ? '作品审核' : 'Listing review'], ['tickets', zh ? '客服工单' : 'Support tickets'],
+      ['listings', zh ? '商品审核' : 'Listing review'], ['tickets', zh ? '客服工单' : 'Support tickets'],
       ['reports', zh ? '举报处理' : 'Reports'], ['payouts', zh ? '提现审核' : 'Withdrawal review'], ['settings', zh ? '平台设置' : 'Platform settings'],
     ].map(([id, label]) => ({ href: `#/admin/${id}`, label, active: route.page === 'admin' && route.subId === id })),
   ] })

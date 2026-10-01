@@ -1,3 +1,6 @@
+import { useAccount } from '../account/store'
+import { apiIsLocal } from '../api'
+import { request } from '../api/transport'
 /*
  * The market cart. It lives in a context rather than on a page because the header shows
  * a cart button on every route, and any page can ask for the drawer to open.
@@ -30,6 +33,18 @@ const CartContext = createContext<CartStore | null>(null)
 
 export function CartProvider({ children, products }: { children: ReactNode; products: MarketProduct[] }) {
   const [lines, setLines] = useState(readCart)
+  const { account } = useAccount()
+  const cartIds = JSON.stringify(lines.map(line => line.id).sort())
+  useEffect(() => {
+    if (apiIsLocal || !account || cartIds === '[]') return
+    let active = true
+    const timer = setTimeout(() => {
+      void request('/cart/events', { method: 'POST', body: { ids: JSON.parse(cartIds) } })
+        .then(() => { if (active) window.dispatchEvent(new Event('moonsprite:data')) })
+        .catch(() => { /* Statistics must not block local cart use. A later cart change retries. */ })
+    }, 100)
+    return () => { active = false; clearTimeout(timer) }
+  }, [account?.id, cartIds])
   const opener = useRef<(() => void) | null>(null)
   const [hasOpener, setHasOpener] = useState(false)
 

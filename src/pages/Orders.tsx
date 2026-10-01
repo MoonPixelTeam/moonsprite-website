@@ -1,3 +1,4 @@
+import { PaymentDialog } from '../account/PaymentDialog'
 import { WorkspacePage } from '../ui'
 import { useState } from 'react'
 
@@ -21,6 +22,7 @@ export function OrderPage({ t, language, orderId }: { t: Copy; language: Languag
   const orderStrings = t.marketPage.orders
   const { orders } = useAccount()
   const order = orderId ? orders.find((item) => item.id === orderId) : undefined
+  const [paymentOpen, setPaymentOpen] = useState(false)
   const [checking, setChecking] = useState(false)
   const [checkMessage, setCheckMessage] = useState('')
 
@@ -41,9 +43,10 @@ export function OrderPage({ t, language, orderId }: { t: Copy; language: Languag
   }
 
   if (order.status === 'pending') return <WorkspacePage title={language === 'zh' ? '等待付款确认' : 'Awaiting payment confirmation'} back="#/purchases" backLabel={orderStrings.back}>
+    {paymentOpen && <PaymentDialog orderId={order.id} language={language} onClose={() => setPaymentOpen(false)} />}
     <OrderSummary order={order} t={t} language={language} />
     <Panel><p>{language === 'zh' ? '支付确认后即可下载。如果已完成付款，请刷新订单；请勿重复付款。' : 'Downloads unlock after payment confirmation. If you have paid, refresh this order; do not pay again.'}</p>
-      {order.paymentUrl && <Button variant="primary" href={order.paymentUrl}>{language === 'zh' ? '继续付款' : 'Continue payment'}</Button>}
+      {order.paymentUrl && <Button variant="primary" onClick={() => setPaymentOpen(true)}>{language === 'zh' ? '继续付款' : 'Continue payment'}</Button>}
       <Button disabled={checking} onClick={async () => {
         setChecking(true); setCheckMessage('')
         try {

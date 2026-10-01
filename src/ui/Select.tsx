@@ -2,6 +2,24 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { PixelCheck as Check, PixelChevronDown as ChevronDown } from './icons'
 import { Tooltip } from './Workbench'
 
+/** Only show the full label when layout actually truncates it. */
+function SelectLabel({ text, className }: { text: string; className: string }) {
+  const ref = useRef<HTMLSpanElement>(null)
+  const [truncated, setTruncated] = useState(false)
+  useEffect(() => {
+    const element = ref.current
+    if (!element) return
+    const measure = () => setTruncated(element.scrollWidth > element.clientWidth)
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    let alive = true
+    void document.fonts?.ready.then(() => { if (alive) measure() })
+    return () => { alive = false; observer.disconnect() }
+  }, [text])
+  return <><span ref={ref} className={className}>{text}</span>{truncated && <Tooltip content={text} />}</>
+}
+
 export type SelectOption<T extends string> = { value: T; label: string }
 
 /**
@@ -93,8 +111,7 @@ export function Select<T extends string>({ value, options, onChange, label, clas
       aria-label={label}
       onClick={() => setOpen((value) => !value)}
       onKeyDown={(event) => { if (event.key === 'Tab') setOpen(false); else onButtonKeyDown(event) }}>
-      <span className="ui-select-label">{current?.label}</span>
-      {current && <Tooltip content={current.label} />}
+      <SelectLabel className="ui-select-label" text={current?.label ?? ""} />
       <ChevronDown aria-hidden="true" />
     </button>
     {open && <ul
@@ -114,8 +131,7 @@ export function Select<T extends string>({ value, options, onChange, label, clas
           className={option.value === value ? 'selected' : undefined}
           onMouseEnter={() => setActive(index)}
           onClick={() => choose(option.value)}>
-          <span className="ui-select-option-label">{option.label}</span>
-          <Tooltip content={option.label} />
+          <SelectLabel className="ui-select-option-label" text={option.label} />
           {option.value === value && <Check aria-hidden="true" />}
         </button>
       </li>)}
