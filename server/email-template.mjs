@@ -1,8 +1,6 @@
-import { fileURLToPath } from 'node:url'
-
 const escape = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char])
 
-/** Inline CSS and presentation tables work without scripts or external fonts. The brand wordmark is embedded as a CID image. */
+/** Inline CSS and presentation tables work without scripts or external fonts. Use a hosted logo to avoid SES rejecting CID multipart mail. */
 export function verificationEmail({ to, code, purpose, publicOrigin }) {
   if (!/^\d{6}$/.test(code) || !['register', 'reset'].includes(purpose)) throw new Error('Invalid verification email')
   const origin = new URL(publicOrigin).origin
@@ -16,7 +14,6 @@ export function verificationEmail({ to, code, purpose, publicOrigin }) {
   const help = escape(origin + '/#/faq')
   // Tencent SES requires Base64 body parts; Nodemailer's automatic choice can be quoted-printable for HTML.
   return { to, subject, textEncoding: 'base64',
-    attachments: [{ filename: 'moonsprite-wordmark.png', path: fileURLToPath(new URL('../public/assets/moonsprite-wordmark.png', import.meta.url)), cid: 'moonsprite-wordmark', contentDisposition: 'inline' }],
     text: `${title}\n${subtitle}\n\n${description}\n\n验证码：${code}\n\n10 分钟内有效，仅用于本次${registering ? '注册' : '密码重置'}。重新获取后，请使用最新的验证码。\n${note}\n\n请勿向任何人透露验证码，MoonSprite 不会主动向你索取验证码或密码。若非本人操作，请忽略此邮件。\n\n此邮件由系统自动发送，请勿直接回复。\nMoonSprite 官网：${origin}/\n帮助中心：${origin}/#/faq`,
     html: `<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${subject}</title></head>
@@ -27,7 +24,7 @@ export function verificationEmail({ to, code, purpose, publicOrigin }) {
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:600px;">
 <tr><td bgcolor="#2979ff" height="4" style="height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>
 <tr><td align="center" bgcolor="#14171c" style="padding:36px 24px 24px;">
-<a href="${website}" style="text-decoration:none;color:#edf1f7;"><img src="cid:moonsprite-wordmark" width="258" height="39" alt="MoonSprite" style="display:block;width:258px;max-width:100%;height:auto;border:0;image-rendering:pixelated;color:#edf1f7;font-size:24px;"></a>
+<a href="${website}" style="text-decoration:none;color:#edf1f7;"><img src="${escape(origin + '/assets/moonsprite-wordmark.png')}" width="258" height="39" alt="MoonSprite" style="display:block;width:258px;max-width:100%;height:auto;border:0;image-rendering:pixelated;color:#edf1f7;font-size:24px;"></a>
 <p style="margin:14px 0 0;color:#97a5b8;font-size:12px;line-height:20px;">像素绘画 · 动画创作</p>
 </td></tr>
 <tr><td align="center" bgcolor="#14171c" style="padding:8px 24px 0;">
