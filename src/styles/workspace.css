@@ -362,3 +362,10 @@
 .cart-status { color: var(--warn); font-size: var(--font-small); text-align: center; }
 .cart-clear { padding: var(--space-2); color: var(--text-4); background: none; border: 0; cursor: pointer; font-size: var(--font-small); text-decoration: underline; text-underline-offset: 3px; }
 .cart-clear:hover { color: var(--danger); }
+
+.sales-register-table { table-layout: auto; min-width: 680px; }
+.sales-register-table th:nth-child(1) { width: 14%; }
+.sales-register-table th:nth-child(2) { width: 28%; }
+.sales-register-table th:nth-child(3) { width: 30%; }
+.sales-register-table th:nth-child(4) { width: 10%; }
+.sales-register-table td:nth-child(3), .sales-register-table td:nth-child(3) a { white-space: nowrap; overflow-wrap: normal; word-break: normal; }

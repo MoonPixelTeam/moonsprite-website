@@ -78,3 +78,18 @@ img.titlebar-wordmark { width: 173.9px; height: 26px; image-rendering: pixelated
 
 
 
+
+.payment-dialog { width: min(460px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow: auto; padding: 28px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text); box-shadow: 0 24px 80px #0005; }
+.payment-dialog::backdrop { background: #10152099; backdrop-filter: blur(4px); }
+.payment-dialog h2 { margin: 0 0 12px; font-size: 24px; }
+.payment-dialog p { color: var(--text-3); line-height: 1.7; }
+.payment-dialog dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; margin: 24px 0; font-size: 14px; }
+.payment-dialog dt { color: var(--text-3); }
+.payment-dialog dd { margin: 0; text-align: right; overflow-wrap: anywhere; }
+.payment-dialog-total { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 0; border-top: 1px solid var(--border); }
+.payment-dialog-total strong { color: var(--accent); font-size: 30px; }
+.payment-dialog form { margin-bottom: 12px; }
+
+.alert-titled { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.alert-titled > strong { white-space: nowrap; }
+.alert-titled > .alert-body { width: 100%; line-height: 1.7; }

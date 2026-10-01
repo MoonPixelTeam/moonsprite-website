@@ -1,3 +1,4 @@
+import { PaymentDialog } from '../account/PaymentDialog'
 import { checkoutError } from '../market/checkout-error'
 import { useRelatedProducts } from '../market/useRelatedProducts'
 import { ProductFacts } from '../market/ProductFacts'
@@ -177,6 +178,7 @@ function CartDrawer({ open, cart, t, language, onClose }: {
   const [step, setStep] = useState<'cart' | 'review'>('cart')
   const [agreed, setAgreed] = useState(false)
   const [agreeError, setAgreeError] = useState(false)
+  const [paymentOrder, setPaymentOrder] = useState<string | null>(null)
   const [paying, setPaying] = useState(false)
   const [paymentType, setPaymentType] = useState<'alipay' | 'wxpay'>('alipay')
 
@@ -217,7 +219,7 @@ function CartDrawer({ open, cart, t, language, onClose }: {
     }
     if (result.order?.status === 'pending' && result.order.paymentUrl) {
       cart.clear()
-      window.location.assign(result.order.paymentUrl)
+      setPaymentOrder(result.order.id)
       return
     }
     cart.clear()
@@ -237,14 +239,15 @@ function CartDrawer({ open, cart, t, language, onClose }: {
 
   useEffect(() => {
     if (!open) return
-    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
+    const onKeyDown = (event: KeyboardEvent) => { if (event.key === 'Escape' && !paymentOrder) onClose() }
     document.addEventListener('keydown', onKeyDown)
     return () => document.removeEventListener('keydown', onKeyDown)
-  }, [open, onClose])
+  }, [open, onClose, paymentOrder])
 
   if (!open) return null
 
   return <div className="cart-layer">
+    {paymentOrder && <PaymentDialog orderId={paymentOrder} language={language} onClose={() => { setPaymentOrder(null); onClose(); navigate('#/purchases') }} />}
     <div className="cart-backdrop" onClick={onClose} aria-hidden="true" />
     <aside className="cart-drawer" role="dialog" aria-modal="true" aria-label={market.cart.title}>
       <header className="cart-head">
@@ -270,12 +273,12 @@ function CartDrawer({ open, cart, t, language, onClose }: {
           <div className="cart-agreement">
             <strong>{market.checkout.agreementTitle}</strong>
             <p>{SITE_CONFIG.apiBaseUrl ? (language === 'zh' ? '付款前请阅读数字内容许可与交易条款。支付将通过 ZPAY 完成，实际以人民币结算，确认金额会显示在收银台。' : 'Read the digital content licence and transaction terms before paying. ZPAY settles in CNY; confirm the amount at checkout.') : market.checkout.agreement}</p>
-            <a href="#/license" onClick={onClose}>{market.checkout.agreementLink}</a>
+            <a href="#/license" target="_blank" rel="noopener noreferrer">{market.checkout.agreementLink}</a>
             <Checkbox checked={agreed} onChange={(next) => { setAgreed(next); setAgreeError(false) }} label={SITE_CONFIG.apiBaseUrl ? (language === 'zh' ? '我已阅读许可与交易条款' : 'I have read the licence and transaction terms') : market.checkout.agreeLabel} />
           </div>
 
           <div className="cart-review-actions">
-            {SITE_CONFIG.apiBaseUrl && cart.subtotal > 0 && <Field label={language === 'zh' ? '支付方式' : 'Payment method'}><select value={paymentType} disabled={paying} onChange={event => setPaymentType(event.target.value as 'alipay' | 'wxpay')}><option value="alipay">{language === 'zh' ? '支付宝' : 'Alipay'}</option><option value="wxpay">{language === 'zh' ? '微信支付' : 'WeChat Pay'}</option></select></Field>}
+            {SITE_CONFIG.apiBaseUrl && cart.subtotal > 0 && <Field label={language === 'zh' ? '支付方式' : 'Payment method'}><Select value={paymentType} disabled={paying} label={language === 'zh' ? '支付方式' : 'Payment method'} onChange={setPaymentType} options={[{ value: 'alipay', label: language === 'zh' ? '支付宝' : 'Alipay' }, { value: 'wxpay', label: language === 'zh' ? '微信支付' : 'WeChat Pay' }]} /></Field>}
             <Button variant="primary" disabled={paying} onClick={pay}>
               {paying ? market.checkout.paying : SITE_CONFIG.apiBaseUrl ? (language === 'zh' ? (cart.subtotal > 0 ? '创建订单并付款' : '领取免费素材') : (cart.subtotal > 0 ? 'Create order & pay' : 'Claim free packs')) : market.checkout.pay}
             </Button>
@@ -504,7 +507,7 @@ export function MarketPage({ t, language }: { t: Copy; language: Language }) {
   </main>
 }
 
-export function PackDetailPage({ t, language, productId, previewProduct }: { t: Copy; language: Language; productId?: string; previewProduct?: MarketProduct }) {
+export function PackDetailPage({ t, language, productId, previewProduct, reviewDownload }: { t: Copy; language: Language; productId?: string; previewProduct?: MarketProduct; reviewDownload?: () => void }) {
   const market = t.marketPage
   const [previewSurface, setPreviewSurface] = useState<'plain' | 'grid'>('plain')
   const [previewZoom, setPreviewZoom] = useState(4)
@@ -641,7 +644,7 @@ export function PackDetailPage({ t, language, productId, previewProduct }: { t: 
             <PriceRow product={product} t={t} language={language} />
             <ProductFacts product={product} language={language} />
             <div className="asset-purchase-actions">
-              {previewProduct ? <Button variant="primary" block disabled>{market.card.add}</Button> : owns(product.id)
+              {reviewDownload ? <Button variant="primary" block onClick={reviewDownload}>{language === 'zh' ? '下载审核文件' : 'Download review file'}</Button> : previewProduct ? <Button variant="primary" block disabled>{market.card.add}</Button> : owns(product.id)
                 ? <Button href="#/purchases" variant="primary" block>{language === 'zh' ? '下载已购资源' : 'Download purchased pack'}</Button>
                 : <Button variant="primary" block className="cart-action" onClick={() => { if (cart.has(product.id)) setCartOpen(true); else cart.add(product.id) }}>{cart.has(product.id) ? (language === 'zh' ? '已加入购物车 · 查看' : 'In cart · View') : market.card.add}</Button>}
             </div>

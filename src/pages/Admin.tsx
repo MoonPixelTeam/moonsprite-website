@@ -1,3 +1,6 @@
+import { lazy, Suspense } from 'react'
+const PackDetailPage = lazy(() => import('./Market').then(module => ({ default: module.PackDetailPage })))
+import { studioToProduct } from '../market/catalogue'
 import { DataBrowser } from '../account/DataBrowser'
 import { UserGroups } from '../account/UserGroups'
 import { apiIsLocal } from '../api'
@@ -80,6 +83,13 @@ export function AdminPage({ t, language, section }: { t: Copy; language: Languag
   const openReports = reports.filter((report: Report) => report.status === 'open')
 
   const title = section === 'data' ? (language === 'zh' ? '数据浏览' : 'Data browser') : section === 'users' ? (language === 'zh' ? '用户权限组' : 'User groups') : section === 'listings' ? strings.listings : section === 'tickets' ? t.supportPage.tickets : section === 'reports' ? strings.reports : section === 'payouts' ? strings.withdrawals : section === 'settings' ? (language === 'zh' ? '平台设置' : 'Platform settings') : strings.title
+  if (section?.startsWith('preview/')) {
+    const product = studio.products.find(item => item.id === section.slice('preview/'.length))
+    return <><Button href="#/admin/listings">{language === 'zh' ? '返回审核队列' : 'Back to review queue'}</Button>{problem && <Alert tone="danger">{problem}</Alert>}{product ? <Suspense fallback={<p>…</p>}><PackDetailPage t={t} language={language} previewProduct={studioToProduct(product, studio.products)} reviewDownload={() => { void perform(async () => {
+      const file = await request<{ url: string }>(`/files/${encodeURIComponent(product.id)}`)
+      window.location.assign(file.url)
+    }) }} /></Suspense> : <p>{language === 'zh' ? '正在读取审核商品，或商品已不存在。' : 'Loading review product, or product no longer exists.'}</p>}</>
+  }
   const visibleProducts = studio.products.filter((product) => filter === 'all' || statusOf(product.id) === filter)
   return <WorkspacePage eyebrow="ADMIN" title={title} subtitle={section === 'data' ? (language === 'zh' ? '像查看表格一样查阅业务数据，支持搜索、筛选和翻页。' : 'Browse server records in searchable, filterable tables.') : section === 'listings' ? strings.listingsHint : section === 'reports' ? strings.reportsHint : section === 'payouts' ? strings.withdrawalsHint : section === 'tickets' ? (language === 'zh' ? '查看用户问题、关联订单与回复记录。' : 'Review customer questions, related orders and replies.') : section === 'settings' ? (language === 'zh' ? '设置作品销售的平台服务费比例。' : 'Set the service fee applied to product sales.') : strings.subtitle} >
         {section === 'data' && <DataBrowser language={language} />}
@@ -118,7 +128,7 @@ export function AdminPage({ t, language, section }: { t: Copy; language: Languag
                   </span>
                   <StatusBadge tone={state === 'approved' ? 'success' : state === 'rejected' ? 'danger' : 'warning'}>{statusLabel[state]}</StatusBadge>
                   {state === 'rejected' && why && <span className="admin-reason">{why}</span>}
-                  <span className="admin-actions">
+                  <span className="admin-actions"><Button size="compact" href={`#/admin/preview/${product.id}`}>{language === 'zh' ? '查看详情' : 'Review details'}</Button>
                     {!apiIsLocal && <Button size="compact" onClick={() => { void perform(async () => {
                       const file = await request<{ url: string }>(`/files/${encodeURIComponent(product.id)}`)
                       window.location.assign(file.url)

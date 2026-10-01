@@ -118,7 +118,7 @@ export function UiPage({ t, language }: { t: Copy; language: Language }) {
             {removable && <Chip active onClick={() => setRemovable(false)}>可移除<X aria-hidden="true" /></Chip>}
             <Chip disabled>禁用</Chip>
           </div>
-          <p className="ui-note">市场筛选、工作室预设、已选标签共用这一个组件。三处曾经各有一套内边距与选中样式。</p>
+          <p className="ui-note">市场筛选、商品上架预设、已选标签共用这一个组件。三处曾经各有一套内边距与选中样式。</p>
         </Panel>
 
         <Panel id="ui-Checkbox" title="Checkbox">
@@ -197,7 +197,7 @@ export function UiPage({ t, language }: { t: Copy; language: Language }) {
             <PageHeader
               level={2}
               eyebrow="STUDIO"
-              title="创作者后台"
+              title="商家中心"
               subtitle="上传要卖的资产包，查看销售额与可提现金额。"
               back="#/account"
               backLabel="返回账号" />

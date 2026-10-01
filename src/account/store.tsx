@@ -108,6 +108,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     const result = await api.orders.create(lines, paymentType)
     if (!result.ok) return { ok: false as const, error: result.error }
     await loadOrders()
+    window.dispatchEvent(new Event('moonsprite:data'))
     // The receipt needs the order it just created.
     return { ok: true as const, order: result.data }
   }, [loadOrders])

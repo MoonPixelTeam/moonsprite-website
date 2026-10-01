@@ -278,7 +278,29 @@ export function createApplication(config, overrides = {}) {
           audit(account.id, 'account.deleted', account.id)
         }); auth.end(req, res); return empty(res)
       }
-      if (method === 'GET' && path === '/api/catalogue') return json(res, list('product').filter(product => !product.archived && review(product.id).status === 'approved' && hasFile(product.id)))
+      if (method === 'POST' && path === '/api/cart/events') {
+        const account = auth.requireAccount(req)
+        requireValue(Array.isArray(body.ids) && body.ids.length <= 50 && body.ids.every(value => typeof value === 'string'), 'lines')
+        rateLimit(`cart-events:${account.id}`, 60, 60000)
+        transaction(() => {
+          for (const productId of new Set(body.ids)) {
+            const product = get('product', productId)
+            if (!product || product.archived || review(productId).status !== 'approved' || !hasFile(productId)) continue
+            const eventId = hashToken(JSON.stringify([account.id, productId]))
+            if (!get('cart-add', eventId)) put('cart-add', { id: eventId, productId }, account.id)
+          }
+        })
+        return empty(res)
+      }
+      if (method === 'GET' && path === '/api/catalogue') {
+        const sold = new Map(), carts = new Map()
+        for (const order of list('order')) if (order.status === 'paid') {
+          for (const line of order.lines) sold.set(line.id, (sold.get(line.id) ?? 0) + line.quantity)
+        }
+        for (const event of list('cart-add')) carts.set(event.productId, (carts.get(event.productId) ?? 0) + 1)
+        return json(res, list('product').filter(product => !product.archived && review(product.id).status === 'approved' && hasFile(product.id))
+          .map(product => ({ ...product, soldCount: sold.get(product.id) ?? 0, cartCount: carts.get(product.id) ?? 0 })))
+      }
       if (method === 'GET' && path === '/api/studio/settings') return json(res, { percent: fee() })
       if (method === 'PATCH' && path === '/api/studio/settings') {
         const account = auth.requireAccount(req, 'admin'); const percent = body.platformFeePercent
@@ -316,27 +338,30 @@ export function createApplication(config, overrides = {}) {
             requireValue(hasFile(product.id), 'missing-file', 409)
             requireValue(product.price === 0 || product.sellerId !== account.id, 'own-product', 409)
             requireValue(!entitled(account.id, product.id), 'owned', 409)
-            return { id: product.id, name: product.name.zh, price: product.price, quantity: line.quantity, sellerId: product.sellerId, platformFeePercent: fee(), feeCents: Math.round(cents(product.price) * line.quantity * fee() / 100) }
+            const unitCnyCents = product.priceCnyCents ?? Math.round(cents(product.price) * config.usdToCny)
+            return { unitCnyCents, id: product.id, name: product.name.zh, price: product.price, quantity: line.quantity, sellerId: product.sellerId, platformFeePercent: fee(), feeCents: Math.round(unitCnyCents / config.usdToCny * line.quantity * fee() / 100) }
           }).sort((a, b) => a.id.localeCompare(b.id))
-          const totalCents = lines.reduce((sum, line) => sum + cents(line.price) * line.quantity, 0)
+          const totalCnyCents = lines.reduce((sum, line) => sum + line.unitCnyCents * line.quantity, 0)
+          const totalCents = totalCnyCents / config.usdToCny
           const pending = list('order', account.id).filter(item => item.status === 'pending')
           const same = pending.find(item => JSON.stringify(item.lines.map(line => [line.id, line.quantity])) === JSON.stringify(lines.map(line => [line.id, line.quantity])) && item.paymentType === paymentType)
           if (same) return same // Retry pays the same immutable quote, never creates a second charge.
           requireValue(!pending.some(item => item.lines.some(line => seen.has(line.id))), 'pending-order', 409)
           requireValue(totalCents === 0 || (config.zpayPid && config.zpayKey), 'payment-unavailable', 503)
           const order = { id: `${Date.now()}${randomInt(100000000, 999999999)}`, accountId: account.id, createdAt: Date.now(), total: totalCents / 100,
-            lines, status: 'pending', cnyCents: Math.round(totalCents * config.usdToCny), exchangeRate: config.usdToCny, paymentType }
+            lines, status: 'pending', cnyCents: totalCnyCents, exchangeRate: config.usdToCny, paymentType }
           put('order', order, account.id)
           if (totalCents === 0) completeOrder(order)
           return order
         }); return json(res, publicOrder(order), 201)
       }
-      const checkoutMatch = path.match(/^\/api\/payments\/(\d+)\/checkout$/)
+      const checkoutMatch = path.match(/^\/api\/payments\/(\d+)\/checkout(?:-data)?$/)
       if (method === 'GET' && checkoutMatch) {
         const account = auth.requireAccount(req); const order = get('order', checkoutMatch[1])
         requireValue(order && order.accountId === account.id, 'missing', 404)
         requireValue(order.status === 'pending', 'payment-state', 409)
         const fields = paymentParameters(order, config)
+        if (path.endsWith('-data')) return json(res, { orderId: order.id, name: fields.name, money: fields.money, paymentType: order.paymentType, action: config.zpaySubmitUrl, fields })
         return html(res, '确认付款', `<p>订单：${escape(order.id)}</p><p>${escape(fields.name)}</p><p>实际支付：¥${escape(fields.money)} CNY（汇率 ${order.exchangeRate}）</p><form method="post" action="${escape(config.zpaySubmitUrl)}">${Object.entries(fields).map(([name, value]) => `<input type="hidden" name="${escape(name)}" value="${escape(value)}">`).join('')}<button type="submit">前往 ZPAY ${order.paymentType === 'wxpay' ? '微信' : '支付宝'}收银台</button></form>`, new URL(config.zpaySubmitUrl).origin)
       }
       if (method === 'GET' && path === '/api/payments/zpay/notify') {

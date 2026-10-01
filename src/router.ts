@@ -29,6 +29,7 @@ export function parseHash(raw: string): Route {
   if (hash.startsWith('/studio/sales/')) return { page: 'studio-sales-order', subId: hash.slice('/studio/sales/'.length) }
   if (hash.startsWith('/studio/preview/')) return { page: 'studio-preview', subId: hash.slice('/studio/preview/'.length) }
   /* Staff console. Like the studio, it is not in the navigation. */
+  if (hash.startsWith('/admin/preview/')) return { page: 'admin', subId: hash.slice('/admin/'.length) }
   if (['/admin/data', '/admin/users', '/admin/listings', '/admin/tickets', '/admin/reports', '/admin/payouts', '/admin/settings'].includes(hash)) return { page: 'admin', subId: hash.slice('/admin/'.length) }
   if (hash === '/admin') return { page: 'admin' }
   if (hash === '/account') return { page: 'account' }

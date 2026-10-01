@@ -27,7 +27,7 @@ export function EarningsOverview({ t, language, actions, className }: {
       <Metric label={s.net} value={formatPrice(studio.net, language)} hint={s.netHint} />
       <Metric label={s.available} value={formatPrice(studio.available, language)} hint={s.availableHint} />
       <Metric label={language === 'zh' ? '售出数量' : 'Units sold'} value={count(unitCount)} hint={language === 'zh' ? '所有作品的售出件数' : 'Total units sold across packs'} />
-      <Metric label={language === 'zh' ? '已发布作品' : 'Published works'} value={count(studio.products.length)} hint={language === 'zh' ? '当前工作室中的作品' : 'Works currently in the studio'} />
+      <Metric label={language === 'zh' ? '已发布作品' : 'Published works'} value={count(studio.products.length)} hint={language === 'zh' ? '当前商家账号下的商品' : 'Products in this seller account'} />
       <Metric label={language === 'zh' ? '提现申请' : 'Withdrawal requests'} value={count(studio.withdrawals.length)} hint={language === 'zh' ? '包含处理中和已完成记录' : 'Pending and completed requests'} />
       <Metric label={language === 'zh' ? '销售订单' : 'Sales orders'} value={count(orderCount)} hint={language === 'zh' ? '产生收入的订单数' : 'Orders that generated sales'} />
     </div>

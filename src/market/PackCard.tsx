@@ -154,9 +154,9 @@ export function AddButton({ product, t, inCart, owned, ownedOrderId, onAdd, bloc
 }
 
 /** Compact popular-pack tile used by the market shelf and the component library. */
-export function PopularPackCard({ product, t, language }: { product: MarketProduct; t: Copy; language: Language }) {
+export function PopularPackCard({ product, t, language, detailed = false }: { product: MarketProduct; t: Copy; language: Language; detailed?: boolean }) {
   const name = productCopy(product.name, language)
-  return <a className="shelf-item" href={marketPackHash(product.id)}>
+  return <a className={detailed ? "shelf-item home-resource-card" : "shelf-item"} href={marketPackHash(product.id)}>
     <span className="shelf-cover">
       <PackImage product={product} t={t} alt={name} zoom={2} />
     </span>
@@ -164,6 +164,10 @@ export function PopularPackCard({ product, t, language }: { product: MarketProdu
       <strong title={name}>{name}</strong>
       <span>{formatProductPrice(product.price, language)}</span>
     </figcaption>
+    {detailed && <div className="home-resource-info">
+      <div className="home-resource-specs"><span>{t.marketPage.categories[product.category]}</span>{product.formats.length > 0 && <span>{product.formats.slice(0, 2).join(' / ')}</span>}{animationCount(product) > 0 && <span>{animationCount(product)} {language === 'zh' ? '种动画' : 'animations'}</span>}</div>
+      <div className="home-resource-footer"><ProductSales product={product} language={language} /><span>{language === 'zh' ? '查看详情' : 'View details'} <span aria-hidden="true">→</span></span></div>
+    </div>}
   </a>
 }
 

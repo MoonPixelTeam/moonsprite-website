@@ -8,7 +8,7 @@ export type ListingDraft = {
 }
 export function initialDraft(product?: StudioProduct | null): ListingDraft {
   return { version: 1, updatedAt: 0, step: 0, locale: 'zh', englishEnabled: Boolean(product && ([product.name, product.tagline, product.body, ...(product.includes ?? []), ...Object.values(product.animations?.labels ?? {})].some(value => value.en && value.en !== value.zh))),
-    savedId: product?.id, cny: product ? String(usdToCny(product.price)) : '', sizes: product?.size ? [product.size] : [], file: null, fileInfo: null,
+    savedId: product?.id, cny: product ? String(product.priceCnyCents !== undefined ? product.priceCnyCents / 100 : usdToCny(product.price)) : '', sizes: product?.size ? [product.size] : [], file: null, fileInfo: null,
     input: product ? { ...product } : { name: { zh: '', en: '' }, tagline: { zh: '', en: '' }, body: { zh: '', en: '' }, price: 0, category: 'assets', size: '', formats: [], tags: [] } }
 }
 export function listingPayload(draft: ListingDraft): PublishInput {
@@ -16,7 +16,7 @@ export function listingPayload(draft: ListingDraft): PublishInput {
   const input = draft.input
   const animations = input.animations && { ...input.animations, labels: Object.fromEntries(Object.entries(input.animations.labels).map(([key, value]) => [key, localized(value)])) }
   return { ...input, name: localized(input.name), tagline: localized(input.tagline), body: localized(input.body),
-    includes: input.includes?.filter(item => item.zh.trim() || (draft.englishEnabled && item.en.trim())).map(item => localized({ ...item, zh: item.zh.trim() || item.en.trim() })), price: cnyToUsd(Number(draft.cny)), size: draft.sizes.join(' · '),
+    includes: input.includes?.filter(item => item.zh.trim() || (draft.englishEnabled && item.en.trim())).map(item => localized({ ...item, zh: item.zh.trim() || item.en.trim() })), priceCnyCents: Math.round(Number(draft.cny) * 100), price: cnyToUsd(Number(draft.cny)),  size: draft.sizes.join(' · '),
     packs: input.category === 'bundles' ? input.packs : undefined, animations: input.category === 'pets' ? animations : undefined }
 }
 export const draftKey = (accountId: string, productId = 'new') => `${accountId}:${productId}`
