@@ -822,3 +822,31 @@ Invoke-RestMethod -Uri "$apiBase/orders" -WebSession $apiSession
 | `scripts/backend.test.mjs` | HTTP 集成、权限与财务流程测试 |
 
 文档中的示例 ID、邮箱、图片地址和支付数据均为占位示例，不是可直接使用的生产凭据。
+
+
+### 用户权限组管理
+
+权限组沿用现有标识：`buyer`（游客，普通注册用户）、`creator`（商家）、`admin`（管理员）。商家继承游客权限，管理员继承商家权限。未登录访客只能使用公开接口；购买、工单等个人操作仍需登录。商家可管理自己的作品、销售和结算，管理员额外拥有审核、工单处理、平台配置及用户权限管理能力。所有受保护接口由服务端验证权限。
+
+- `GET /admin/users`：仅管理员；返回用户的 id、name、email、roles、createdAt。
+- `PATCH /admin/users/:id/role`：仅管理员；请求体 `{"role":"buyer|creator|admin"}`（选择一个实际值）；返回更新后的 Account。不存在的用户返回 404，无效角色返回 400，非管理员返回 403。禁止修改自己的组或移除最后一个管理员（409）。权限更新、撤销该用户全部会话及审计记录在同一事务中完成，用户须重新登录。
+
+前端入口：`#/admin/users`。工单表单提供下载/安装、付款/订单、资源异常、退款和功能建议五个模板，仍使用现有 subject/message/orderId 接口，不新增工单类型字段。
+
+
+### 上架向导与宠物预览
+
+上架表单按文件、基本信息、介绍、媒体、确认五步填写。英文为可选内容，提交时空英文回退到中文。草稿及待上传文件保存在当前浏览器的 IndexedDB，按账号与编辑商品隔离；不代表已上传或跨设备同步。提交成功后移除该草稿，失败则保留商品编号，继续使用原商品重试文件上传。
+
+独立预览入口为 `#/studio/preview/new` 或 `#/studio/preview/:productId`，读取当前账号的本地草稿，复用商品详情页，不提供购买操作。`.mspet` v1 导入在浏览器中解码精灵图，识别名称、规格、默认封面、动画及交互触发；不执行包内代码，也不自动定价。
+
+商品的 `animations.sheets[id].durations` 可选，为正整数毫秒数组，数量须等于帧数、总和须等于 duration。`animations.triggers` 保存动画 id、event 及可选 repeat、cooldownMs、idleSeconds、tool，引用的动画必须存在。服务器校验后保留这些字段，避免提交后丢失交互。
+
+验证：构建后运行 `pnpm test:publish`，使用临时数据库和独立浏览器验证上架、草稿文件恢复、独立预览与提交。可设置 `WIZARD_PET_FILE` 指向真实宠物包进行导入验证；不会连接线上后端。
+
+
+### 管理员数据浏览（只读）
+
+`GET /admin/data?dataset=users&q=&status=&page=1`，仅管理员可访问。dataset 支持 users、products、orders、tickets、withdrawals、files、events。q 搜索该分类可见列（最长 200 字符），status 按接口返回的 statuses 筛选。每页 25 条，返回 columns、datasets、statuses、rows、total、page、pages、pageSize；页码超出范围时返回最后一页。无结果时返回第 1 页及空 rows。
+
+所有分类与列均由服务端固定定义，不接受 SQL、表名或列名输入。不会返回密码哈希、登录/验证令牌、收款账号或文件内容；文件分类仅显示元数据。响应禁用缓存。不提供写入接口。前端入口为 `#/admin/data`（平台管理 → 数据浏览），支持搜索、筛选、刷新、翻页和展开完整记录。金额列标注币种；订单使用下单时锁定的人民币金额。

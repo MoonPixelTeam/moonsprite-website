@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-export type Route = { page: 'competitions' | 'login' | 'register' | 'home' | 'market' | 'docs' | 'faq' | 'blog' | 'account' | 'purchases' | 'studio' | 'studio-publish' | 'studio-sales-order' | 'ui' | 'license' | 'privacy' | 'receipt' | 'orders' | 'settings' | 'support' | 'settlement' | 'admin'; subId?: string; returnTo?: string }
+export type Route = { page: 'studio-preview' | 'competitions' | 'login' | 'register' | 'home' | 'market' | 'docs' | 'faq' | 'blog' | 'account' | 'purchases' | 'studio' | 'studio-publish' | 'studio-sales-order' | 'ui' | 'license' | 'privacy' | 'receipt' | 'orders' | 'settings' | 'support' | 'settlement' | 'admin'; subId?: string; returnTo?: string }
 
 export function isWorkspaceRoute(route: Route): boolean {
   return ['account', 'purchases', 'studio', 'studio-publish', 'studio-sales-order', 'receipt', 'orders', 'settings', 'support', 'settlement', 'admin'].includes(route.page)
@@ -27,8 +27,9 @@ export function parseHash(raw: string): Route {
   if (hash === '/support') return { page: 'support' }
   if (hash === '/studio/settlement') return { page: 'settlement' }
   if (hash.startsWith('/studio/sales/')) return { page: 'studio-sales-order', subId: hash.slice('/studio/sales/'.length) }
+  if (hash.startsWith('/studio/preview/')) return { page: 'studio-preview', subId: hash.slice('/studio/preview/'.length) }
   /* Staff console. Like the studio, it is not in the navigation. */
-  if (['/admin/listings', '/admin/tickets', '/admin/reports', '/admin/payouts', '/admin/settings'].includes(hash)) return { page: 'admin', subId: hash.slice('/admin/'.length) }
+  if (['/admin/data', '/admin/users', '/admin/listings', '/admin/tickets', '/admin/reports', '/admin/payouts', '/admin/settings'].includes(hash)) return { page: 'admin', subId: hash.slice('/admin/'.length) }
   if (hash === '/admin') return { page: 'admin' }
   if (hash === '/account') return { page: 'account' }
   if (hash === '/purchases') return { page: 'purchases' }
@@ -74,6 +75,6 @@ export function authHash(mode: 'login' | 'register', returnTo?: string): string 
   return `#/${mode}?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`
 }
 export function routeHash(route: Route): string {
-  const base = route.page === 'studio-publish' ? 'studio/publish' : route.page === 'studio-sales-order' ? 'studio/sales' : route.page === 'settlement' ? 'studio/settlement' : route.page
+  const base = route.page === 'studio-preview' ? 'studio/preview' : route.page === 'studio-publish' ? 'studio/publish' : route.page === 'studio-sales-order' ? 'studio/sales' : route.page === 'settlement' ? 'studio/settlement' : route.page
   return `#/${base}${route.subId ? `/${route.subId}` : ''}`
 }

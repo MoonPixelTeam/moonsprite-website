@@ -19,6 +19,15 @@ test('published details survive storage, render in the real detail page and retr
     const { studioToProduct, CatalogueProvider } = await server.ssrLoadModule('/src/market/catalogue.ts')
     const { bundleItems, bundleValue } = await server.ssrLoadModule('/src/market/catalog.ts')
     const { frameSrc } = await server.ssrLoadModule('/src/market/PixelArt.tsx')
+    const { initialDraft, listingPayload, draftKey } = await server.ssrLoadModule('/src/studio/listing-draft.ts')
+    const draft = initialDraft()
+    draft.cny = '0'; draft.input.name = { zh: '中文名称', en: 'English title' }
+    assert.equal(listingPayload(draft).name.en, '中文名称')
+    draft.englishEnabled = true
+    assert.equal(listingPayload(draft).name.en, 'English title')
+    assert.equal(listingPayload(draft).price, 0)
+    assert.notEqual(draftKey('seller-a'), draftKey('seller-b'))
+    assert.notEqual(draftKey('seller-a'), draftKey('seller-a', 'existing-pack'))
     const { saveListing } = await server.ssrLoadModule('/src/studio/save-listing.ts')
     const seller = await api.auth.register({ name: 'Listing seller', email: 'listing@example.com', password: 'password123' })
     assert.equal(seller.ok, true)
